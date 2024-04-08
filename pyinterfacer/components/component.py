@@ -20,6 +20,7 @@ class Component(pygame.sprite.Sprite):
         y: int,
         width: Optional[int] = 0,
         height: Optional[int] = 0,
+        grid_cell: Optional[int] = None,
         groups: Tuple[pygame.sprite.AbstractGroup, ...] = (),
         *args,
         **kwargs,
@@ -33,6 +34,7 @@ class Component(pygame.sprite.Sprite):
         self.y = y
         self.width = width if width is not None else 0
         self.height = height if height is not None else 0
+        self.grid_cell = grid_cell
 
         self.subtype = None  # Should be set by custom components, to indicate which of the default component set type the custom components belong to (used for group handling)
 

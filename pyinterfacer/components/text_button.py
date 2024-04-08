@@ -24,7 +24,6 @@ class TextButton(Clickable, Text, Hoverable):
 
     def update(self) -> None:
         super().update()
-        self.image.set_colorkey("#000000")
 
     def hover_action(self) -> None:
         if self.focus_color is None:

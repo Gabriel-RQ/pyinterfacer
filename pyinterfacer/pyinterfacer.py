@@ -80,8 +80,7 @@ class PyInterfacer:
         p = os.path.abspath(path)
         if os.path.exists(p):
             for interface_file in os.listdir(p):
-                if re.match(r".*\.(yaml|yml)$", interface_file):
-                    cls.load_interface(os.path.join(p, interface_file))
+                cls.load_interface(os.path.join(p, interface_file))
 
     @classmethod
     def load_interface(cls, file: str) -> None:
@@ -91,16 +90,20 @@ class PyInterfacer:
         :param file: Path to the YAML interface file.
         """
 
-        with open(file, "r") as interface_file:
-            interface_dict: Dict = yaml.safe_load(interface_file)
+        if re.match(r".*\.(yaml|yml)$", file):
+            with open(file, "r") as interface_file:
+                interface_dict: Dict = yaml.safe_load(interface_file)
 
-            if interface_dict is None:
-                raise EmptyInterfaceFileException()
+                if interface_dict is None:
+                    raise EmptyInterfaceFileException()
 
-            if "interface" not in interface_dict or "components" not in interface_dict:
-                raise InvalidInterfaceFileException()
+                if (
+                    "interface" not in interface_dict
+                    or "components" not in interface_dict
+                ):
+                    raise InvalidInterfaceFileException()
 
-            cls._parse_components(interface_dict)
+                cls._parse_components(interface_dict)
 
     @classmethod
     def _parse_components(cls, interface_dict: Dict) -> None:
@@ -110,10 +113,40 @@ class PyInterfacer:
         :param interface_dict: Output of the YAML file load.
         """
 
+        # If HEIGHT and WIDTH are not set, fallback to pygame's set display size
+        if cls.WIDTH is None and cls.HEIGHT is None:
+            cls.WIDTH, cls.HEIGHT = pygame.display.get_window_size()
+
+        # Checks if the display type is specified
+        if "display" not in interface_dict or interface_dict["display"] not in (
+            "default",
+            "grid",
+        ):
+            raise InvalidDisplayTypeException(interface_dict["interface"])
+
+        display_type = interface_dict["display"]
+
+        if display_type == "grid":
+            # fallback to 'default' display if rows and columns are not specified
+            if "rows" not in interface_dict or "columns" not in interface_dict:
+                display_type = "default"
+            else:
+                # otherwise calculate the size of each grid
+                grid_width = cls.HEIGHT // interface_dict["rows"]
+                grid_height = cls.WIDTH // interface_dict["columns"]
+
         for component in interface_dict["components"]:
 
             # Converts percentage values
-            cls._parse_percentage_values(component)
+            cls._parse_percentage_values(component, grid_width, grid_height)
+
+            if display_type == "grid":
+                cls._parse_grid_values(
+                    component,
+                    grid_width,
+                    grid_height,
+                    interface_dict["columns"],
+                )
 
             # instantiates a component according to it's type
             c = cls._COMPONENT_CONVERSION_TABLE[component["type"].lower()](
@@ -136,29 +169,66 @@ class PyInterfacer:
             cls.STATS[c.type] += 1
 
     @classmethod
-    def _parse_percentage_values(cls, component: Dict) -> None:
+    def _parse_percentage_values(
+        cls, component: Dict, gw: Optional[int] = None, gh: Optional[int] = None
+    ) -> None:
         """
         Converts percentage values from a component's width, height, x and y atributes to integer values. PyInterfacer's WIDTH and HEIGHT atributes must be set for this to work.
 
         :param component: Dictionary representing the component.
         """
 
-        if cls.WIDTH is None and cls.HEIGHT is None:
-            cls.WIDTH, cls.HEIGHT = pygame.display.get_window_size()
+        # Use width and height values relative to the grid cell size, if component is positioned in a grid cell, otherwise relative to the window size
+        width = gw if "grid_cell" in component else cls.WIDTH
+        height = gh if "grid_cell" in component else cls.HEIGHT
 
         if "width" in component and type(w := component["width"]) is str:
             if "%" in w:
-                component["width"] = int(cls.WIDTH * percent_to_float(w))
+                component["width"] = int(width * percent_to_float(w))
         if "height" in component and type(h := component["height"]) is str:
             if "%" in h:
-                component["height"] = int(cls.HEIGHT * percent_to_float(h))
+                component["height"] = int(height * percent_to_float(h))
 
+        # X and Y values are not taken into account for components with a grid cell specified, as they are always centered in their own cell
         if "x" in component and type(x := component["x"]) is str:
             if "%" in x:
-                component["x"] = int(cls.WIDTH * percent_to_float(x))
+                component["x"] = int(width * percent_to_float(x))
         if "y" in component and type(y := component["y"]) is str:
             if "%" in y:
-                component["y"] = int(cls.HEIGHT * percent_to_float(y))
+                component["y"] = int(height * percent_to_float(y))
+
+    @classmethod
+    def _parse_grid_values(
+        cls, component: Dict, gw: int, gh: int, columns: int
+    ) -> None:
+        """
+        Converts the grid information into actual position and size information for each component.
+
+        :param component: Dictionary representing the component.
+        :param gw: Grid cell width.
+        :param gh: Grid cell height.
+        :param columns: Amount of columns in the grid.
+        """
+
+        if "grid_cell" in component:
+            # calculate which row and column the component is at
+            row = component["grid_cell"] // columns
+            column = component["grid_cell"] % columns
+
+            # centers the component position at it's grid position
+            # this should be inverted, be it don't work if it's inverted ???
+            component["x"] = int((column * gh) + (gh / 2))
+            component["y"] = int((row * gw) + (gw / 2))
+
+            # if width and height are not provided, make the component use the grid's size instead; if they are provided as 'auto', use default component sizing behavior
+            if "width" not in component:
+                component["width"] = gw
+            elif component["width"] == "auto":
+                component["width"] = None
+            if "height" not in component:
+                component["height"] = gh
+            elif component["height"] == "auto":
+                component["height"] = None
 
     @classmethod
     def _handle_new_type_group(cls, component: Component):
@@ -427,4 +497,11 @@ class InvalidInterfaceFileException(Exception):
     def __init__(self) -> None:
         super().__init__(
             "The provided YAML interface file is not in valid format. Be sure to include the interface name and the components."
+        )
+
+
+class InvalidDisplayTypeException(Exception):
+    def __init__(self, interface: str) -> None:
+        super().__init__(
+            f"The specified display type for the interface '{interface}' is invalid. It should be either 'default' or 'grid'."
         )

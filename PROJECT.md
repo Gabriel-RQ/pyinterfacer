@@ -57,8 +57,7 @@ class Component(pygame.sprite.Sprite):
     y: int,
     width: int? = None,
     height: int? = None,
-    image: pygame.Surface,
-    rect: pygame.Rect,
+    grid_cell: int? = None,
     groups: tuple[pygame.Group]? = None
 
     # Does nothing by default, should be overwritten with image preloading logic, if needed.
@@ -248,6 +247,9 @@ Each interface must be represented by a single YAML file. The file structure sho
 
 ```yaml
 interface: interface-name
+display: display-type
+rows: rows-amount-if-grid
+columns: columns-amount-if-grid
 components:
     - type: component-type
       atribute: value
@@ -263,3 +265,9 @@ Each component and it's atributes must be listed under `components`. Invalid atr
 # Modularity
 
 Every component should inherit from `Component`. To allow for better group handling, each custom component should define the `self.subtype` atribute to the type of one of the default components. If not defined, the component will be placed in a simple `ComponentGroup`. The default component types should be made avaiable from the enum `DefaultComponentTypes`.
+
+# Interface display types
+
+A display type of `default` or `grid` can be specified to each interface. For interfaces of display type `grid`, `rows` and `columns` attributes must also be specified. If a interface is of display type `default`, it's components should be positioned simply by providing `x` and `y` attributes; if it's display type is `grid`, each component can also be positioned by default `x` and `y` attributes, but the atribute `grid_cell` can be specified to the number of a specific cell in the grid, in which the component will be positioned at the center. Components with the `grid_cell` attribute will have their `x` and `y` attributes ignored.
+
+If `width` and `height` attributes are specified as percentage values to components in a grid cell, the component's size will be calculated relative to the grid cell size, instead of the window size, otherwise, if `width` and `height` are not specified, the component will fill it's grid cell; `width` and `height` can also be specified as `auto` for the components in a grid_cell, which will make the component use it's default sizing behavior (for example, using the size of it's internal text, for a `TextButton`, or just completely disappearing for a `Button`).
