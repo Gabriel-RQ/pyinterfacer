@@ -166,6 +166,164 @@ components:
    width: auto
 ```
 
+# Components and attributes
+
+Below is a list of the components avaiable in the default component set, and the attributes they can accept:
+
+```py
+Component:
+  id: str
+  type: str
+  interface: str
+  x: int
+  y: int
+  width: int?
+  height: int?
+  grid_cell: int?
+
+Text:
+  id: str
+  type: str
+  interface: str
+  x: int
+  y: int
+  width: int?
+  height: int?
+  grid_cell: int?
+  text: str
+  font: str?
+  font_size: int?
+  font_color: str?
+  bold: bool?
+  italic: bool?
+  antialias: bool?
+
+Clickable:
+  id: str
+  type: str
+  interface: str
+  x: int
+  y: int
+  width: int?
+  height: int?
+  grid_cell: int?
+  action: Callable? # this should not be set at the YAML declaration
+  enabled: bool?
+
+Hoverable:
+  id: str
+  type: str
+  interface: str
+  x: int
+  y: int
+  width: int?
+  height: int?
+  grid_cell: int?
+
+Button:
+  id: str
+  type: str
+  interface: str
+  x: int
+  y: int
+  width: int?
+  height: int?
+  grid_cell: int?
+  text: str
+  font: str?
+  font_size: int?
+  font_color: str?
+  bold: bool?
+  italic: bool?
+  antialias: bool?
+  action: Callable? # this should not be set at the YAML declaration
+  enabled: bool?
+
+TextButton:
+  id: str
+  type: str
+  interface: str
+  x: int
+  y: int
+  width: int?
+  height: int?
+  grid_cell: int?
+  text: str
+  font: str?
+  font_size: int?
+  font_color: str?
+  bold: bool?
+  italic: bool?
+  antialias: bool?
+  action: Callable? # this should not be set at the YAML declaration
+  enabled: bool?
+  focus_color: str?
+
+Input:
+  id: str
+  type: str
+  interface: str
+  x: int
+  y: int
+  width: int?
+  height: int?
+  grid_cell: int?
+  text: str
+  font: str?
+  font_size: int?
+  font_color: str?
+  bold: bool?
+  italic: bool?
+  antialias: bool?
+  active: bool = False
+  bg_color: str?
+  bg_focus_color: str?
+  border_focus_color: str?
+  border_radius: int?
+  max_length: int?
+  hint: str?
+
+Image:
+  id: str
+  type: str
+  interface: str
+  x: int
+  y: int
+  width: int?
+  height: int?
+  grid_cell: int?
+  path: str
+
+Animation:
+  id: str
+  type: str
+  interface: str
+  x: int
+  y: int
+  width: int?
+  height: int?
+  grid_cell: int?
+  delay: int
+  images: Tuple[str] # paths to each sprite
+  colorkey: str?
+
+SpritesheetAnimation:
+  id: str
+  type: str
+  interface: str
+  x: int
+  y: int
+  width: int?
+  height: int?
+  grid_cell: int?
+  delay: int
+  images: Tuple[str] # this is automatically set based on the spritesheet, don't use it for this component
+  colorkey: str?
+  spritesheet: str
+  sprite_width: int,
+  sprite_height: int
+```
+
 # Examples
 
 Below, an example project:

@@ -57,8 +57,7 @@ class Component(pygame.sprite.Sprite):
     y: int,
     width: int? = None,
     height: int? = None,
-    grid_cell: int? = None,
-    groups: tuple[pygame.Group]? = None
+    grid_cell: int? = None
 
     # Does nothing by default, should be overwritten with image preloading logic, if needed.
     def preload_image() -> None
@@ -108,9 +107,9 @@ class TextButton(Clickable, Text, Hoverable):
 # This component allows for user input
 class Input(Text, Hoverable):
     active: bool = False,
-    bg_color: string?,
-    bg_focus_color: string?,
-    border_focus_color: string?,
+    bg_color: str?,
+    bg_focus_color: str?,
+    border_focus_color: str?,
     border_radius: int?,
     max_length: int?,
     hint: str?
