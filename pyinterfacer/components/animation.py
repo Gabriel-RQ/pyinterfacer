@@ -17,7 +17,7 @@ class Animation(Component):
         images: Tuple[str, ...],
         **kwargs,
     ) -> None:
-        super().__init__(id, **kwargs)
+        super().__init__(**kwargs)
 
         self.frames = frames
         self.delay = delay

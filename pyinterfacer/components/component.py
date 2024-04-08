@@ -20,9 +20,9 @@ class Component(pygame.sprite.Sprite):
         y: int,
         width: Optional[int] = 0,
         height: Optional[int] = 0,
-        groups: Optional[Tuple[pygame.sprite.AbstractGroup, ...]] = None,
+        groups: Tuple[pygame.sprite.AbstractGroup, ...] = (),
     ) -> None:
-        super().__init__(*groups)
+        super().__init__(groups)
 
         self.id = id
         self.type = type
@@ -31,6 +31,8 @@ class Component(pygame.sprite.Sprite):
         self.y = y
         self.width = width if width is not None else 0
         self.height = height if height is not None else 0
+
+        self.subtype = None  # Should be set by custom components, to indicate which of the default component set type the custom components belong to (used for group handling)
 
     def preload_image(self) -> None:
         """This method does nothing by default. Can be overwritten by inheriting classes to execute image preloading logic."""

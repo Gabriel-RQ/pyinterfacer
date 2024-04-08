@@ -1,3 +1,8 @@
+"""
+@author: Gabriel RQ
+@description: Font utilities for PyInterfacer.
+"""
+
 import pygame
 
 
@@ -17,7 +22,7 @@ class Font:
         self.bold = bold
         self.italic = italic
 
-        if f := font.lower() in pygame.font.get_fonts():
+        if (f := font.lower()) in pygame.font.get_fonts():
             self.font = pygame.font.SysFont(
                 name=f,
                 size=self.font_size,

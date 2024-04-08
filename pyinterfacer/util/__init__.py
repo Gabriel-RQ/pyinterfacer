@@ -1,1 +1,1 @@
-from .font import *
+from .font import Font

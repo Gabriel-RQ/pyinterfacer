@@ -1,3 +1,8 @@
+"""
+@author: Gabriel RQ
+@description: Group utilities for PyInterfacer.
+"""
+
 import pygame
 
 from typing import List, Tuple, Optional
