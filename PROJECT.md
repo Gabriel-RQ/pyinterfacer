@@ -17,7 +17,7 @@ Python library for building interfaces for pygame projects, using YAML files to 
 - **FR09: Component search by type:** The library must be able to search components by their type.
 - **FR10: Default components:** The library must provide a set of default, extendable components.
 - **FR11: Interface design:** The interfaces must represent a single screen, serving as a container to it's inner components.
-- **FR12: Serialization:** The library must allow serialization of it's state through pickle.
+- **FR12: Interface focus:** The library must allow that a single interface be focused.
 
 ## Nonfunctional Requirements
 
@@ -33,6 +33,7 @@ Python library for building interfaces for pygame projects, using YAML files to 
 - **NFR10: Simplicity:** The library should be simple to use.
 - **NFR11: Performance:** The library should prioritize performance.
 - **NFR12: Compatibility:** The library should work consistently across different platforms where python and pygame are supported.
+- **NFR13: Serialization:** The library must allow serialization of it's state through pickle.
 
 # Components
 
@@ -50,7 +51,7 @@ Also consider that the atributes of each class below are the same used in the YA
 
 # All components must inherit from this class
 class Component(pygame.sprite.Sprite):
-    id: int,
+    id: str,
     type: str,
     interface: str,
     x: int,
@@ -61,18 +62,21 @@ class Component(pygame.sprite.Sprite):
     rect: pygame.Rect,
     groups: tuple[pygame.Group]? = None
 
+    # Does nothing by default, should be overwritten with image preloading logic, if needed.
+    def preload_image() -> None
+
     @override
     def update() -> None
 
 
+# This component simply displays text
 class Text(Component):
-    text: str,
-    font: str,
-    font_size: int,
-    font_color: str,
-    bold: bool,
-    italic: bool,
-    underline: bool,
+    text: str = "",
+    font: str? = "Arial",
+    font_size: int? = 18,
+    font_color: str? = "#000000",
+    bold: bool? = False,
+    italic: bool? = False,
 
 
 # Clickable components should all inherit from this class.
@@ -89,13 +93,13 @@ class Hoverable(Component):
 
 # If a background image is provided, the width and height atributes are not needed, and the size of the image will be used instead.
 class Button(Clickable, Text, Hoverable):
-    bg_image: str,
-    bg_color: str
+    bg_image: str?,
+    bg_color: str?
 
 
 # This component differs from a simple Button in that it's size will adjust to the size of the text, be a width and height not provided.
 class TextButton(Clickable, Text, Hoverable):
-    focus_color: str
+    focus_color: str?
 
 
 # This component allows for user input
@@ -108,7 +112,7 @@ class Input(Component, Text, Hoverable):
 
 # This component displays a static image. If width and height are not provided, the image's size will be used instead.
 class Image(Component):
-    pass
+    path: str
 
 
 # This component displays images in sequence
@@ -128,7 +132,6 @@ class Font:
     font_color: str,
     bold: bool,
     italic: bool,
-    underline: bool
 
     def render(text: str) -> pygame.surface.Surface
 ```
@@ -136,24 +139,28 @@ class Font:
 And the following groups:
 
 ```py
+
+# Semantic wrapper for the pygame GroupSingle
+FocusGroup = pygame.sprite.GroupSingle
+
 # Semantic wrapper for the pygame Group. Overrites drawing and updating to allow doing these operations for specific interfaces.
 class ComponentGroup(pygame.sprite.Group):
     # Updates the components in the group. If '*interfaces' are provided, updates only the components present in the specified interfaces.
-    def update(*interfaces? = None) -> None
+    def update(interfaces: Tuple[str]? = None) -> None
     # Draws the components in the group. If '*interfaces' are provided, draws only the components present in the specified interfaces.
-    def draw(surface: pygame.surface.Surface, *interfaces? = None) -> None
+    def draw(surface: pygame.surface.Surface, interfaces: Tuple[str]? = None) -> None
 
 
 # Specialized group for handling Clickable components
 class ClickableGroup(ComponentGroup):
     # Emits an activation for all the Clickable components in the group. If 'interfaces' is provided, activate only the Clickable components in the specified interfaces
-    def activate(interfaces: List[str]?) -> None
+    def handle_click(interfaces: Tuple[str]? = None) -> None
 
 
 # Specialized group for handling Hoverable components
 class HoverableGroup(ComponentGroup):
     # Calls handle_hover for each Hoverable component in the group. If 'interfaces' is provided, handle hover only for the Hoverable components in the specified interfaces
-    def handle_hover(interfaces: List[str]?) -> None
+    def handle_hover(interfaces: Tuple[str]? = None) -> None
 
 
 # Specialized group for handling buttons
@@ -168,28 +175,36 @@ The interfaces must be handled by a single class. It's definition is described b
 ```py
 # This class handles all the interfaces.
 class PyInterfacer:
-    STATS: Counter,
-    COMPONENTS: Mapping[str, List[Component]], # store all the components, grouped by their interfaces
+    STATS: Counter, # Keeps track of how many interfaces and components of each type are loaded
+    FOCUS_GROUP: FocusGroup, # Group of a single interface, controls the current focused interface
     GROUPS: Dict[str, ComponentGroup], # store all the groups (general group, component types groups, interface groups)
-    _COMPONENT_CONVERSION_MAPPING: Dict[str, Component] # maps a type (key) to a component class (value). Used to handle conversion from YAML atributes to component instances
+    COMPONENTS: Dict[str, List[Component]], # store all the components, grouped by their interfaces
+    _COMPONENT_CONVERSION_TABLE: Dict[str, Component] # maps a type (key) to a component class (value). Used to handle conversion from YAML atributes to component instances
 
     # Loads all the interface files in a directory
     def load_all(path: str) -> None
     # Loads a single interface from a file
     def load_interface(file: str) -> None
 
-    # Adds a custom component to be used in the interface. If 'type_' is the type of an existing component, it will be overriden.
-    def add_custom_component(type_: str, class_: Component) -> None
+    # Adds new, custom components to be used in the interface. If 'type_' is the type of an existing component, it will be overridden.
+    def add_custom_components(components: Dict[str, Component]) -> None
 
     # Retrieves a component instance by it's ID. If 'interface' is provided, the search will look directly under the interface scope.
-    def get_by_id(id_: str, interface: str? = None) -> Component
+    def get_by_id(id_: str, interface: str? = None) -> Component?
     # Retrieves all the components in an interface
-    def get_by_interface(interface: str) -> Component
+    def get_by_interface(interface: str) -> Tuple[Component]?
     # Retrieves all the components for a type. If 'interface' is provided, the search will look directly under the interface scope.
-    def get_by_type(type_: str, interface: str? = None)
+    def get_by_type(type_: str, interface: str? = None) -> Tuple[Component]?
 
     # Updates all the loaded interfaces. If '*interfaces' are provided, update only the specified interfaces.
     def update(*interfaces: str) -> None
     # Draw all the loaded interfaces. If '*interfaces' are provided, draw only the specified interfaces.
-    def draw(*interfaces: str) -> None
+    def draw(surface: pygame.surface.Surface, *interfaces: str) -> None
+
+    # Changes the focus to the specified interface
+    def change_focus(interface: str) -> None
+    # Updates only the currently focused interface
+    def update_focused() -> None
+    # Draws only the currently focused interface
+    def draw_focused(surface: pygame.surface.Surface) -> None
 ```
