@@ -30,7 +30,9 @@ class ComponentGroup(pygame.sprite.Group):
             sprite.update()
 
     def draw(
-        self, surface: pygame.Surface, interfaces: Optional[Tuple[str, ...]] = None
+        self,
+        surface: pygame.Surface,
+        interfaces: Optional[Tuple[str, ...]] = None,
     ) -> List:
         # Filter the sprites
         if interfaces is not None and len(interfaces) > 0:
@@ -39,6 +41,7 @@ class ComponentGroup(pygame.sprite.Group):
             )
         else:
             sprites = self.sprites()
+
         if hasattr(surface, "blits"):
             self.spritedict.update(
                 zip(sprites, surface.blits((spr.image, spr.rect) for spr in sprites))
