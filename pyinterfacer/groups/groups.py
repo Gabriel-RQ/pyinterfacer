@@ -6,7 +6,7 @@
 import pygame
 
 from typing import List, Tuple, Optional
-from ..components import Component, Clickable, Hoverable
+from ..components import Component, Clickable, Hoverable, Input
 
 FocusGroup = pygame.sprite.GroupSingle
 
@@ -74,7 +74,7 @@ class ClickableGroup(ComponentGroup):
 
         mpos = pygame.mouse.get_pos()
         for sprite in sprites:
-            if isinstance(sprite, Clickable):
+            if isinstance(sprite, Clickable) or hasattr(sprite, "handle_click"):
                 sprite.handle_click(mpos)
 
 
@@ -102,3 +102,23 @@ class HoverableGroup(ComponentGroup):
 
 class ButtonGroup(ClickableGroup, HoverableGroup):
     """Specialized group for handling Button components."""
+
+
+class InputGroup(ClickableGroup, HoverableGroup):
+    def handle_input(self, event, interfaces: Optional[Tuple[str, ...]] = None) -> None:
+        """
+        Handles input for all of the Input components in the group. If `interfaces` is provided, handles the input only for the components in the specified interfaces.
+
+        :param interfaces: Filter the Input components that will receive the activation.
+        """
+
+        if interfaces is not None and len(interfaces) > 0:
+            sprites = filter(
+                lambda c: _filter_components(c, interfaces), self.sprites()
+            )
+        else:
+            sprites = self.sprites()
+
+        for sprite in sprites:
+            if isinstance(sprite, Input):
+                sprite.handle_input(event.key, event.unicode)

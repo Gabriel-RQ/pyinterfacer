@@ -97,6 +97,8 @@ class Button(Clickable, Text, Hoverable):
     bg_image: str?,
     bg_color: str?,
     bg_alpha: int?,
+    bg_focus_color: str?,
+    border_radius: int?
 
 
 # This component differs from a simple Button in that it's size will adjust to the size of the text, be a width and height not provided.
@@ -106,8 +108,12 @@ class TextButton(Clickable, Text, Hoverable):
 
 # This component allows for user input
 class Input(Text, Hoverable):
-    max_length: int?,
-    min_length: int?,
+    active: bool = False,
+    bg_color: string?,
+    bg_focus_color: string?,
+    border_focus_color: string?,
+    border_radius: int?,
+    max_length: int?
 
     def handle_input(pressed_key: str) -> None
 
@@ -119,9 +125,9 @@ class Image(Component):
 
 # This component displays images in sequence
 class Animation(Component):
-    frames: int,
     delay: int,
-    images: Tuple[str] # the paths to each image composing the animation
+    images: Tuple[str], # the paths to each image composing the animation
+    colorkey: str?
 ```
 
 The `Component` class also defines a `subtype` atribute as None by default. This atribute should be set by custom components, to indicate which of the default component set types the custom component belongs to. The `subtype` is used for group handling at parsing.

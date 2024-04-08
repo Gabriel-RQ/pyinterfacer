@@ -4,4 +4,5 @@ from .groups import (
     ClickableGroup,
     HoverableGroup,
     ButtonGroup,
+    InputGroup,
 )
