@@ -25,12 +25,16 @@ class Animation(Component):
         self.colorkey = colorkey
 
         try:
-            self.images = [pygame.image.load(image) for image in images]
+            # checks if 'images' is a list of paths, otherwise it should be a list of Surfaces
+            if len(images) > 0 and type(images[0]) is str:
+                self.images = [pygame.image.load(image).convert() for image in images]
+            else:
+                self.images = images
         except:
             self.images = None
         else:
             # Verifies if needs to scale images
-            if self.width is not None and self.height is not None:
+            if self.width > 0 and self.height > 0:
                 self.images = [
                     pygame.transform.scale(image, (self.width, self.height))
                     for image in self.images
@@ -43,7 +47,7 @@ class Animation(Component):
 
             self.images = tuple(self.images)
 
-        self.frames = len(self.images)
+        self.frames = len(self.images) if self.images is not None else 0
 
         self._current_frame = 0
         self._delay_counter = 0

@@ -46,6 +46,7 @@ class PyInterfacer:
         "hoverable": Hoverable,
         "image": Image,
         "input": Input,
+        "spritesheet-animation": SpritesheetAnimation,
         "text-button": TextButton,
         "text": Text,
     }
@@ -316,6 +317,9 @@ class PyInterfacer:
         :param interface: The interface that should be focused. Can be `None` in order to not set any focus.
         """
 
+        if interface is not None and interface not in cls.GROUPS["interfaces"]:
+            return
+
         cls._current_focus = interface
 
     @classmethod
@@ -412,7 +416,8 @@ class DefaultComponentTypes(Enum):
     HOVERABLE = "hoverable"
     IMAGE = "image"
     INPUT = "input"
-    TEXT_BUTTON = "text_button"
+    SPRITESHEET_ANIMATION = "spritesheet-animation"
+    TEXT_BUTTON = "text-button"
     TEXT = "text"
 
 

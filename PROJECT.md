@@ -129,6 +129,12 @@ class Animation(Component):
     delay: int,
     images: Tuple[str], # the paths to each image composing the animation
     colorkey: str?
+
+# This component displays images loaded from a spritesheet in sequence
+class SpritesheetAnimation(Animation):
+    spritesheet: str,
+    sprite_width: int,
+    sprite_height: int
 ```
 
 The `Component` class also defines a `subtype` atribute as None by default. This atribute should be set by custom components, to indicate which of the default component set types the custom component belongs to. The `subtype` is used for group handling at parsing.
