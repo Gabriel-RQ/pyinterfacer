@@ -376,7 +376,7 @@ class PyInterfacer:
     @classmethod
     def emit_input(cls, event, *interfaces: Tuple[str, ...]) -> None:
         """
-        Calls `Input.handle_emit` for all `Input` components, through `InputGroup.handle_input`. If `interfaces` are provided, handles input events only for the specified `interfaces`.
+        Calls `Input.handle_input` for all `Input` components, through `InputGroup.handle_input`. If `interfaces` are provided, handles input events only for the specified `interfaces`.
 
         :param interfaces: A tuple containing the name of the interfaces to limit the input handling to.
         """
