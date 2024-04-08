@@ -142,24 +142,21 @@ class PyInterfacer:
 
         :param component: Dictionary representing the component.
         """
-        width_set = cls.WIDTH is not None
-        height_set = cls.HEIGHT is not None
 
-        if width_set and "width" in component and type(w := component["width"]) is str:
+        if cls.WIDTH is None and cls.HEIGHT is None:
+            cls.WIDTH, cls.HEIGHT = pygame.display.get_window_size()
+
+        if "width" in component and type(w := component["width"]) is str:
             if "%" in w:
                 component["width"] = int(cls.WIDTH * percent_to_float(w))
-        if (
-            height_set
-            and "height" in component
-            and type(h := component["height"]) is str
-        ):
+        if "height" in component and type(h := component["height"]) is str:
             if "%" in h:
                 component["height"] = int(cls.HEIGHT * percent_to_float(h))
 
-        if width_set and "x" in component and type(x := component["x"]) is str:
+        if "x" in component and type(x := component["x"]) is str:
             if "%" in x:
                 component["x"] = int(cls.WIDTH * percent_to_float(x))
-        if height_set and "y" in component and type(y := component["y"]) is str:
+        if "y" in component and type(y := component["y"]) is str:
             if "%" in y:
                 component["y"] = int(cls.HEIGHT * percent_to_float(y))
 
