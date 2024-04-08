@@ -21,6 +21,7 @@ class Input(Text, Hoverable):
         border_radius: Optional[int] = None,
         border_focus_color: Optional[int] = None,
         max_length: Optional[int] = None,
+        hint: Optional[str] = None,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -31,6 +32,7 @@ class Input(Text, Hoverable):
         self.border_focus_color = border_focus_color
         self.border_radius = border_radius
         self.max_length = max_length
+        self.hint = hint
 
         self._bg_color_backup = self.bg_color
 
@@ -50,7 +52,7 @@ class Input(Text, Hoverable):
 
         if pressed_key == pygame.K_BACKSPACE:
             self.text = self.text[:-1]
-        elif pressed_key == pygame.K_RETURN or pressed_key == pygame.K_TAB:
+        elif pressed_key in (pygame.K_RETURN, pygame.K_KP_ENTER, pygame.K_TAB):
             self.active = False
         elif self.max_length is None or len(self.text) < self.max_length:
             self.text += key_unicode
@@ -81,7 +83,9 @@ class Input(Text, Hoverable):
                 border_radius=self.border_radius,
             )
 
-        txt_surf = self.font.render(self.text)
+        txt_surf = self.font.render(
+            self.hint if self.hint is not None and not len(self.text) > 0 else self.text
+        )
         # offsets the x position of the text if it's wider than the input's width
         txt_x_pos = (
             15

@@ -113,7 +113,8 @@ class Input(Text, Hoverable):
     bg_focus_color: string?,
     border_focus_color: string?,
     border_radius: int?,
-    max_length: int?
+    max_length: int?,
+    hint: str?
 
     def handle_input(pressed_key: str) -> None
 
@@ -230,6 +231,9 @@ class PyInterfacer:
     def emit_click(cls, *interfaces: Tuple[str, ...]) -> None
     # Handles hover events for all of the Hoverable components. If '*interfaces' are provided, limit the handling to the specified interfaces.
     def handle_hover(cls, *interfaces: Tuple[str, ...]) -> None
+
+    # Update and render all the components in the currently focused interface.
+    def just_work(cls, surface: pygame.Surface) -> None
 ```
 
 # Interface files
@@ -252,4 +256,4 @@ Each component and it's atributes must be listed under `components`. Invalid atr
 
 # Modularity
 
-Every component should inherti from `Component`. To allow for better group handling, each custom component should define the `self.subtype` atribute to the type of one of the default components. If not defined, the component will be placed in a simple `ComponentGroup`.
+Every component should inherit from `Component`. To allow for better group handling, each custom component should define the `self.subtype` atribute to the type of one of the default components. If not defined, the component will be placed in a simple `ComponentGroup`. The default component types should be made avaiable from the enum `DefaultComponentTypes`.
