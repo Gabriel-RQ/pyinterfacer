@@ -1,5 +1,4 @@
 from .groups import (
-    FocusGroup,
     ComponentGroup,
     ClickableGroup,
     HoverableGroup,

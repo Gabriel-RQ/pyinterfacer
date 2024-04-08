@@ -134,6 +134,8 @@ class PyInterfacer:
                 # otherwise calculate the size of each grid
                 grid_width = cls.HEIGHT // interface_dict["rows"]
                 grid_height = cls.WIDTH // interface_dict["columns"]
+        else:
+            grid_width = grid_height = None
 
         for component in interface_dict["components"]:
 

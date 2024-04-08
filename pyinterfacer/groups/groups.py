@@ -8,8 +8,6 @@ import pygame
 from typing import List, Tuple, Optional
 from ..components import Component, Clickable, Hoverable, Input
 
-FocusGroup = pygame.sprite.GroupSingle
-
 
 def _filter_components(component: Component, interfaces: Tuple[str, ...]) -> bool:
     return isinstance(component, Component) and component.interface in interfaces
