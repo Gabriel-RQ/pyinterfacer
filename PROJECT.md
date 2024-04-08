@@ -205,6 +205,8 @@ class PyInterfacer:
     def load_all(path: str) -> None
     # Loads a single interface from a file
     def load_interface(file: str) -> None
+    # Unloads all interfaces. Should not be called while still updating or rendering any interface.
+    def unload() -> None
 
     # Adds new, custom components to be used in the interface. If 'type_' is the type of an existing component, it will be overridden. The parameter 'components' is a dictionary of 'component types : component classes'
     def add_custom_components(components: Dict[str, Component]) -> None

@@ -106,6 +106,18 @@ class PyInterfacer:
                 cls._parse_components(interface_dict)
 
     @classmethod
+    def unload(cls) -> None:
+        """
+        Removes all loaded interfaces. Not safe to call while updating or rendering any interface.
+        """
+
+        cls.COMPONENTS.clear()
+        cls.GROUPS["generic"].empty()
+        cls.GROUPS["interfaces"].clear()
+        cls.GROUPS["types"].clear()
+        cls.STATS.clear()
+
+    @classmethod
     def _parse_components(cls, interface_dict: Dict) -> None:
         """
         Handles the parsing of the components loaded from the YAML interface file.
