@@ -3,7 +3,9 @@
 @description: Simple animation component. Displays images in sequence.
 """
 
-from typing import Tuple
+import pygame
+
+from typing import Tuple, Optional
 from .component import Component
 
 
@@ -12,13 +14,52 @@ class Animation(Component):
 
     def __init__(
         self,
-        frames: int,
         delay: int,
         images: Tuple[str, ...],
+        colorkey: Optional[str] = None,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
 
-        self.frames = frames
         self.delay = delay
-        self.images = tuple(images)
+        self.colorkey = colorkey
+
+        try:
+            self.images = [pygame.image.load(image) for image in images]
+        except:
+            self.images = None
+        else:
+            # Verifies if needs to scale images
+            if self.width is not None and self.height is not None:
+                self.images = [
+                    pygame.transform.scale(image, (self.width, self.height))
+                    for image in self.images
+                ]
+
+            # Applies colorkey, if provided
+            if self.colorkey is not None:
+                for image in self.images:
+                    image.set_colorkey(self.colorkey)
+
+            self.images = tuple(self.images)
+
+        self.frames = len(self.images)
+
+        self._current_frame = 0
+        self._delay_counter = 0
+
+    def update(self) -> None:
+        # Verify if there are loaded images
+        if self.images is None or len(self.images) == 0:
+            return
+
+        # Define the image for the current frame
+        self.image = self.images[self._current_frame]
+        self.rect = self.image.get_rect(center=(self.x, self.y))
+
+        # Handles the delay
+        self._delay_counter += 1
+
+        if self._delay_counter == self.delay:
+            self._current_frame = (self._current_frame + 1) % self.frames
+            self._delay_counter = 0
