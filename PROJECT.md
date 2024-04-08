@@ -252,7 +252,7 @@ components:
     ...
 ```
 
-Each component and it's atributes must be listed under `components`. Invalid atributes are ignored during conversion.
+Each component and it's atributes must be listed under `components`. Invalid atributes are ignored during conversion. For `width`, `height`, `x` and `y` atributes, percentage values are accepted and will be converted at parsing. For that to work, `PyInterface.WIDTH` and `PyInterfacer.HEIGHT` must be set.
 
 # Modularity
 
