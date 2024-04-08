@@ -21,6 +21,8 @@ class Component(pygame.sprite.Sprite):
         width: Optional[int] = 0,
         height: Optional[int] = 0,
         groups: Tuple[pygame.sprite.AbstractGroup, ...] = (),
+        *args,
+        **kwargs,
     ) -> None:
         super().__init__(groups)
 

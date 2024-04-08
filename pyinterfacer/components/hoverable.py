@@ -4,11 +4,17 @@
 """
 
 from typing import Tuple
+
 from .component import Component
 
 
 class Hoverable(Component):
     """Base class for hoverable components."""
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+        self._hovered = False
 
     def hover_action(self) -> None:
         """
@@ -17,5 +23,11 @@ class Hoverable(Component):
         pass
 
     def handle_hover(self, mouse_pos: Tuple[int, int]) -> None:
-        if self.rect and self.rect.collidepoint(mouse_pos):
-            self.hover_action()
+        """Checks if this component was hovered, and executes it's `hover_action` if so."""
+
+        if self.rect is not None and self.rect.collidepoint(mouse_pos):
+            self._hovered = True
+        else:
+            self._hovered = False
+
+        self.hover_action()

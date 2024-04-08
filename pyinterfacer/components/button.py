@@ -19,12 +19,15 @@ class Button(Clickable, Text, Hoverable):
         self,
         bg_image: Optional[str] = None,
         bg_color: Optional[str] = None,
+        bg_alpha: Optional[int] = None,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
 
         self.bg_image = bg_image
         self.bg_color = bg_color
+        self.bg_alpha = bg_alpha
+        self._disabled_bg_alpha = 175
 
         self._load_error = False
 
@@ -41,6 +44,12 @@ class Button(Clickable, Text, Hoverable):
                     img = pygame.transform.scale(img, (self.width, self.height))
                 else:
                     self.width, self.height = img.get_size()
+
+                # Sets the background opacity
+                if self.bg_alpha is not None:
+                    img.set_alpha(self.bg_alpha)
+                if not self.enabled:
+                    img.set_alpha(self._disabled_bg_alpha)
 
                 # Checks if there's text to be rendered into the button
                 if len(self.text) > 0:
@@ -71,6 +80,11 @@ class Button(Clickable, Text, Hoverable):
 
         if self.bg_color is not None:
             self.image.fill(self.bg_color)
+
+        if self.bg_alpha is not None:
+            self.image.set_alpha(self.bg_alpha)
+        if not self.enabled:
+            self.image.set_alpha(self._disabled_bg_alpha)
 
         txt_surf = self.font.render(self.text)
         self.image.blit(
