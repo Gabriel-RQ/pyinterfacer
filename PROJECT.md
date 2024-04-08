@@ -46,7 +46,6 @@ The base components offered by the library are listed below:
 ```py
 """
 Consider that the classes will have all the atributes and methods from their parents, plus their own.
-Also consider that the atributes of each class below are the same used in the YAML interface file.
 """
 
 # All components must inherit from this class
@@ -72,16 +71,18 @@ class Component(pygame.sprite.Sprite):
 # This component simply displays text
 class Text(Component):
     text: str = "",
-    font: str? = "Arial",
+    font: str?,
     font_size: int? = 18,
     font_color: str? = "#000000",
     bold: bool? = False,
     italic: bool? = False,
+    antialias: bool? = True,
 
 
 # Clickable components should all inherit from this class.
 class Clickable(Component):
-    action: Callable?
+    action: Callable?,
+    enabled: bool? = True
 
     def handle_click(mouse_pos: Tuple[int, int]) -> None
 
@@ -94,7 +95,8 @@ class Hoverable(Component):
 # If a background image is provided, the width and height atributes are not needed, and the size of the image will be used instead.
 class Button(Clickable, Text, Hoverable):
     bg_image: str?,
-    bg_color: str?
+    bg_color: str?,
+    bg_alpha: int?,
 
 
 # This component differs from a simple Button in that it's size will adjust to the size of the text, be a width and height not provided.
@@ -103,9 +105,9 @@ class TextButton(Clickable, Text, Hoverable):
 
 
 # This component allows for user input
-class Input(Component, Text, Hoverable):
-    max_length: int,
-    min_length: int,
+class Input(Text, Hoverable):
+    max_length: int?,
+    min_length: int?,
 
     def handle_input(pressed_key: str) -> None
 
@@ -122,6 +124,7 @@ class Animation(Component):
     images: Tuple[str] # the paths to each image composing the animation
 ```
 
+The `Component` class also defines a `subtype` atribute as None by default. This atribute should be set by custom components, to indicate which of the default component set types the custom component belongs to. The `subtype` is used for group handling at parsing.
 Also, the following utilities are avaiable:
 
 ```py
@@ -175,19 +178,26 @@ The interfaces must be handled by a single class. It's definition is described b
 ```py
 # This class handles all the interfaces.
 class PyInterfacer:
+    # The size of the screen
+    WIDTH: int?
+    HEIGHT: int?
+
     STATS: Counter, # Keeps track of how many interfaces and components of each type are loaded
-    FOCUS_GROUP: FocusGroup, # Group of a single interface, controls the current focused interface
+    _current_focus: str, # Controls the current focused interface
     GROUPS: Dict[str, ComponentGroup], # store all the groups (general group, component types groups, interface groups)
     COMPONENTS: Dict[str, List[Component]], # store all the components, grouped by their interfaces
     _COMPONENT_CONVERSION_TABLE: Dict[str, Component] # maps a type (key) to a component class (value). Used to handle conversion from YAML atributes to component instances
+    _GROUP_CONVERSION_TABLE: Dict[str, ComponentGroup] # Maps a component type (key) to a component group. Used to handle the creation of specific groups for some component types
 
     # Loads all the interface files in a directory
     def load_all(path: str) -> None
     # Loads a single interface from a file
     def load_interface(file: str) -> None
 
-    # Adds new, custom components to be used in the interface. If 'type_' is the type of an existing component, it will be overridden.
+    # Adds new, custom components to be used in the interface. If 'type_' is the type of an existing component, it will be overridden. The parameter 'components' is a dictionary of 'component types : component classes'
     def add_custom_components(components: Dict[str, Component]) -> None
+    # Adds new, custom component groups for the specified component types. This allows control over what type of group will be created for default and custom components. The paramenter 'groups' is a dictionary of 'component types : component groups'
+    def add_custom_groups(groups: Dict[str, ComponentGroup]) -> None
 
     # Retrieves a component instance by it's ID. If 'interface' is provided, the search will look directly under the interface scope.
     def get_by_id(id_: str, interface: str? = None) -> Component?
@@ -203,8 +213,37 @@ class PyInterfacer:
 
     # Changes the focus to the specified interface
     def change_focus(interface: str) -> None
+    # Returns the currently focused interface name
+    def get_focused() -> str
     # Updates only the currently focused interface
     def update_focused() -> None
     # Draws only the currently focused interface
     def draw_focused(surface: pygame.surface.Surface) -> None
+
+    # Emits a call to handle a click for the Clickable components. If '*interfaces' are provided, limit the event to the specified interfaces.
+    def emit_click(cls, *interfaces: Tuple[str, ...]) -> None
+    # Handles hover events for all of the Hoverable components. If '*interfaces' are provided, limit the handling to the specified interfaces.
+    def handle_hover(cls, *interfaces: Tuple[str, ...]) -> None
 ```
+
+# Interface files
+
+Each interface must be represented by a single YAML file. The file structure should be defined as below:
+
+```yaml
+interface: interface-name
+components:
+    - type: component-type
+      atribute: value
+
+    - type: component-type
+      atribute: value
+
+    ...
+```
+
+Each component and it's atributes must be listed under `components`. Invalid atributes are ignored during conversion.
+
+# Modularity
+
+Every component should inherti from `Component`. To allow for better group handling, each custom component should define the `self.subtype` atribute to the type of one of the default components. If not defined, the component will be placed in a simple `ComponentGroup`.
