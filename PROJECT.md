@@ -182,7 +182,88 @@ class ButtonGroup(ClickableGroup, HoverableGroup):
     pass
 ```
 
-# Interface handling
+# Interface handling (1.0 New proposal)
+
+This proposal aims to enhance on what's been defined in the first proposal, including, but not limited to the following:
+
+- New Interface class to store interface related information
+- Each interface creates it's own Surface
+- PyInterfacer receives the "display" as an attribute, instead of width and height, and use it to render
+
+```py
+# This class handles all the interfaces
+class PyInterfacer:
+    _display: pygame.Surface # Where to render everything
+    _current_focus: Interface # Controls the current focused interface
+
+    STATS: Counter # Keeps track of how many interfaces and components of each type are loaded
+    INTERFACES: Dict[str, Interface] # Stores all the interfaces, by their name
+    COMPONENTS: Dict[str, Component] # Stores all the components, by their id
+
+    _COMPONENT_CONVERSION_TABLE: Dict[str, Component] # maps a type (key) to a component class (value). Used to handle conversion from YAML atributes to component instances
+    _GROUP_CONVERSION_TABLE: Dict[str, ComponentGroup] # Maps a component type (key) to a component group. Used to handle the creation of specific groups for some component types
+
+    # Loads all the interface files in a directory
+    def load_all(path: str) -> None
+    # Loads a single interface from a file
+    def load_interface(file: str) -> None
+    # Unloads all interfaces. Should not be called while still updating or rendering any interface.
+    def unload() -> None
+
+    # Adds new, custom components to be used in the interface. If 'type_' is the type of an existing component, it will be overridden. The parameter 'components' is a dictionary of 'component types : component classes'
+    def add_custom_components(components: Dict[str, Component]) -> None
+    # Adds new, custom component groups for the specified component types. This allows control over what type of group will be created for default and custom components. The paramenter 'groups' is a dictionary of 'component types : component groups'
+    def add_custom_groups(groups: Dict[str, ComponentGroup]) -> None
+
+    # Retrieves a component instance by it's ID. If 'interface' is provided, the search will look directly under the interface scope.
+    def get_by_id(id_: str, interface: str? = None) -> Component?
+    # Retrieves all the components in an interface
+    def get_by_interface(interface: str) -> Tuple[Component]?
+    # Retrieves all the components for a type. If 'interface' is provided, the search will look directly under the interface scope.
+    def get_by_type(type_: str, interface: str? = None) -> Tuple[Component]?
+
+    # Updates the currently focused interface
+    def update() -> None
+    # Draws the currently focused interface.
+    def draw() -> None
+    # Updates, draws and handles hover in the currently focused interface
+    def handle() -> None
+
+    # Changes the focus to the specified interface
+    def change_focus(interface: str) -> None
+    # Returns the currently focused interface
+    def get_focused() -> Interface
+
+    # Emits a call to handle a click for the Clickable components in the currently focused interface.
+    def emit_click(cls, *interfaces: Tuple[str, ...]) -> None
+    # Handles hover events for all of the Hoverable components in the currently focused interface.
+    def handle_hover(cls, *interfaces: Tuple[str, ...]) -> None
+
+
+# This class handles a single interface
+class Interface:
+    name: str
+    display: "default" | "grid"
+    rows: int?
+    columns: int?
+    surface: pygame.Surface
+
+    _group: ComponentGroup
+    _components: List[Component]
+    _style_classes: Dict[str, Dict] # Maps a style class (key) to it's information (value)
+
+    # Updates the interface
+    def update() -> None
+    # Renders the interface
+    def draw(display: pygame.Surface) -> None
+    # Renders and updates the interface to the display
+    def handle(display: pygame.Surface) -> None
+
+    # Returns a dictionary containg the components of the interface, grouped by their 'id'
+    def component_dict() -> Dict[str, Component]
+```
+
+# Interface handling (First Proposal)
 
 The interfaces must be handled by a single class. It's definition is described below:
 
@@ -193,10 +274,10 @@ class PyInterfacer:
     WIDTH: int?
     HEIGHT: int?
 
-    STATS: Counter, # Keeps track of how many interfaces and components of each type are loaded
-    _current_focus: str, # Controls the current focused interface
-    GROUPS: Dict[str, ComponentGroup], # store all the groups (general group, component types groups, interface groups)
-    COMPONENTS: Dict[str, List[Component]], # store all the components, grouped by their interfaces
+    STATS: Counter # Keeps track of how many interfaces and components of each type are loaded
+    _current_focus: str # Controls the current focused interface
+    GROUPS: Dict[str, ComponentGroup] # store all the groups (general group, component types groups, interface groups)
+    COMPONENTS: Dict[str, List[Component]] # store all the components, grouped by their interfaces
     _COMPONENT_CONVERSION_TABLE: Dict[str, Component] # maps a type (key) to a component class (value). Used to handle conversion from YAML atributes to component instances
     _GROUP_CONVERSION_TABLE: Dict[str, ComponentGroup] # Maps a component type (key) to a component group. Used to handle the creation of specific groups for some component types
 
