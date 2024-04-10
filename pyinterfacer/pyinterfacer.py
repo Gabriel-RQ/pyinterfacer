@@ -8,34 +8,23 @@ import yaml
 import os
 import re
 
-from collections import Counter, defaultdict
-from typing import Optional, Dict, DefaultDict, List, Tuple
+from typing import Optional, Dict
 from enum import Enum
+from .interface import Interface
 from .groups import *
 from .components import *
-from .util import percent_to_float
 
 
 class PyInterfacer:
     """PyInterfacer interface manager."""
 
-    WIDTH, HEIGHT = None, None
+    _display: pygame.Surface = None
+    _current_focus: Optional[Interface] = None
 
-    # Keeps track of how many interfaces and components of each type are loaded
-    STATS = Counter()
-
-    # Holds the name of the interface with the current focus for rendering and updating
-    _current_focus: str = None
-
-    # Stores all the groups (general group, component type groups, interface groups)
-    GROUPS = {
-        "generic": ComponentGroup(),
-        "interfaces": defaultdict(ComponentGroup),
-        "types": {},
-    }
-
-    # Stores all the components, grouped by their interface
-    COMPONENTS: DefaultDict[str, List[Component]] = defaultdict(list)
+    # Stores all the interfaces. Each key represents an interface name.
+    INTERFACES: Dict[str, Interface] = {}
+    # Stores all the components. Each key represents an id.
+    COMPONENTS: Dict[str, Component] = {}
 
     # Maps a component type (key) a component class (value). Used to handle conversion from YAML loaded components to their instances
     _COMPONENT_CONVERSION_TABLE: Dict[str, Component] = {
@@ -60,14 +49,13 @@ class PyInterfacer:
     }
 
     @classmethod
-    def set_size(cls, w: int, h: int) -> None:
+    def set_display(cls, display: pygame.Surface) -> None:
         """
-        Sets the display size.
-        :param w: Display width.
-        :param h: Display height.
+        Sets the display to render to.
+
+        :param display: Pygame Surface.
         """
-        cls.WIDTH = w
-        cls.HEIGHT = h
+        cls._display = display
 
     @classmethod
     def load_all(cls, path: str) -> None:
@@ -80,10 +68,10 @@ class PyInterfacer:
         p = os.path.abspath(path)
         if os.path.exists(p):
             for interface_file in os.listdir(p):
-                cls.load_interface(os.path.join(p, interface_file))
+                cls.load(os.path.join(p, interface_file))
 
     @classmethod
-    def load_interface(cls, file: str) -> None:
+    def load(cls, file: str) -> None:
         """
         Loads the specified interface file.
 
@@ -103,7 +91,7 @@ class PyInterfacer:
                 ):
                     raise InvalidInterfaceFileException()
 
-                cls._parse_components(interface_dict)
+                cls._parse_interface(interface_dict)
 
     @classmethod
     def unload(cls) -> None:
@@ -111,23 +99,16 @@ class PyInterfacer:
         Removes all loaded interfaces. Not safe to call while updating or rendering any interface.
         """
 
+        cls.INTERFACES.clear()
         cls.COMPONENTS.clear()
-        cls.GROUPS["generic"].empty()
-        cls.GROUPS["interfaces"].clear()
-        cls.GROUPS["types"].clear()
-        cls.STATS.clear()
 
     @classmethod
-    def _parse_components(cls, interface_dict: Dict) -> None:
+    def _parse_interface(cls, interface_dict: Dict):
         """
-        Handles the parsing of the components loaded from the YAML interface file.
+        Parses a interface file from it's YAML declaration.
 
-        :param interface_dict: Output of the YAML file load.
+        :param interface_dict: Dictionary loaded from the YAML file.
         """
-
-        # If HEIGHT and WIDTH are not set, fallback to pygame's set display size
-        if cls.WIDTH is None and cls.HEIGHT is None:
-            cls.WIDTH, cls.HEIGHT = pygame.display.get_window_size()
 
         # Checks if the display type is specified
         if "display" not in interface_dict or interface_dict["display"] not in (
@@ -136,135 +117,42 @@ class PyInterfacer:
         ):
             raise InvalidDisplayTypeException(interface_dict["interface"])
 
-        display_type = interface_dict["display"]
+        # Checks if grid display declaration is complete
+        if interface_dict["display"] == "grid" and (
+            "rows" not in interface_dict or "columns" not in interface_dict
+        ):
+            raise InvalidDisplayTypeException(interface_dict["interface"])
 
-        if display_type == "grid":
-            # fallback to 'default' display if rows and columns are not specified
-            if "rows" not in interface_dict or "columns" not in interface_dict:
-                display_type = "default"
-            else:
-                # otherwise calculate the size of each grid
-                grid_width = cls.HEIGHT // interface_dict["rows"]
-                grid_height = cls.WIDTH // interface_dict["columns"]
+        # Sets the conversion table for the interfaces
+        Interface.set_conversion_tables(
+            component=cls._COMPONENT_CONVERSION_TABLE,
+            group=cls._GROUP_CONVERSION_TABLE,
+        )
+
+        # Checks if a display has been set, if not, fallback to the display initialized from pygame.display.set_mode
+        if cls._display is None:
+            if pygame.display.get_active():
+                cls._display = pygame.display.get_surface()
+
+        # Checks if any component style class has been defined for the interface
+        if "styles" in interface_dict and len(interface_dict["styles"]) > 0:
+            s = {style["name"]: style for style in interface_dict["styles"]}
         else:
-            grid_width = grid_height = None
+            s = None
 
-        for component in interface_dict["components"]:
-
-            # Converts percentage values
-            cls._parse_percentage_values(component, grid_width, grid_height)
-
-            if display_type == "grid":
-                cls._parse_grid_values(
-                    component,
-                    grid_width,
-                    grid_height,
-                    interface_dict["columns"],
-                )
-
-            # instantiates a component according to it's type
-            c = cls._COMPONENT_CONVERSION_TABLE[component["type"].lower()](
-                **component,
-                interface=interface_dict["interface"],
-            )
-            cls.COMPONENTS[interface_dict["interface"]].append(c)
-
-            # verifies if there's not a component group for it's type yet
-            if c.type not in cls.GROUPS["types"]:
-                cls._handle_new_type_group(c)
-
-            # add the component to the groups
-            cls.GROUPS["generic"].add(c)
-            cls.GROUPS["types"][c.type].add(c)
-            cls.GROUPS["interfaces"][interface_dict["interface"]].add(c)
-
-            # updates the stats
-            cls.STATS[interface_dict["interface"]] += 1
-            cls.STATS[c.type] += 1
-
-    @classmethod
-    def _parse_percentage_values(
-        cls, component: Dict, gw: Optional[int] = None, gh: Optional[int] = None
-    ) -> None:
-        """
-        Converts percentage values from a component's width, height, x and y atributes to integer values. PyInterfacer's WIDTH and HEIGHT atributes must be set for this to work.
-
-        :param component: Dictionary representing the component.
-        """
-
-        # Use width and height values relative to the grid cell size, if component is positioned in a grid cell, otherwise relative to the window size
-        width = gw if "grid_cell" in component else cls.WIDTH
-        height = gh if "grid_cell" in component else cls.HEIGHT
-
-        if "width" in component and type(w := component["width"]) is str:
-            if "%" in w:
-                component["width"] = int(width * percent_to_float(w))
-        if "height" in component and type(h := component["height"]) is str:
-            if "%" in h:
-                component["height"] = int(height * percent_to_float(h))
-
-        # X and Y values are not taken into account for components with a grid cell specified, as they are always centered in their own cell
-        if "x" in component and type(x := component["x"]) is str:
-            if "%" in x:
-                component["x"] = int(width * percent_to_float(x))
-        if "y" in component and type(y := component["y"]) is str:
-            if "%" in y:
-                component["y"] = int(height * percent_to_float(y))
-
-    @classmethod
-    def _parse_grid_values(
-        cls, component: Dict, gw: int, gh: int, columns: int
-    ) -> None:
-        """
-        Converts the grid information into actual position and size information for each component.
-
-        :param component: Dictionary representing the component.
-        :param gw: Grid cell width.
-        :param gh: Grid cell height.
-        :param columns: Amount of columns in the grid.
-        """
-
-        if "grid_cell" in component:
-            # calculate which row and column the component is at
-            row = component["grid_cell"] // columns
-            column = component["grid_cell"] % columns
-
-            # centers the component position at it's grid position
-            # this should be inverted, be it don't work if it's inverted ???
-            component["x"] = int((column * gh) + (gh / 2))
-            component["y"] = int((row * gw) + (gw / 2))
-
-            # if width and height are not provided, make the component use the grid's size instead; if they are provided as 'auto', use default component sizing behavior
-            if "width" not in component:
-                component["width"] = gw
-            elif component["width"] == "auto":
-                component["width"] = None
-            if "height" not in component:
-                component["height"] = gh
-            elif component["height"] == "auto":
-                component["height"] = None
-
-    @classmethod
-    def _handle_new_type_group(cls, component: Component):
-        """
-        Creates new component groups for component types that don't have a group yet.
-
-        :param component: A component instance.
-        """
-
-        # Verifies if the component's type or subtype have a special group that should be used
-        if component.type in cls._GROUP_CONVERSION_TABLE:
-            cls.GROUPS["types"][component.type] = cls._GROUP_CONVERSION_TABLE[
-                component.type
-            ]()
-        elif component.subtype in cls._GROUP_CONVERSION_TABLE:
-            cls.GROUPS["types"][component.type] = cls._GROUP_CONVERSION_TABLE[
-                component.subtype
-            ]()
-        else:
-            cls.GROUPS["types"][
-                component.type
-            ] = ComponentGroup()  # otherwise use the most generic ComponentGroup
+        # Creates a new interface and stores it
+        i = Interface(
+            name=interface_dict.get("interface"),
+            background=interface_dict.get("background"),
+            size=cls._display.get_size(),
+            components=interface_dict.get("components"),
+            display=interface_dict.get("display"),
+            rows=interface_dict.get("rows"),
+            columns=interface_dict.get("columns"),
+            styles=s,
+        )
+        cls.INTERFACES[i.name] = i
+        cls.COMPONENTS.update(i.component_dict())
 
     @classmethod
     def add_custom_components(cls, components: Dict[str, Component]) -> None:
@@ -287,204 +175,94 @@ class PyInterfacer:
         cls._GROUP_CONVERSION_TABLE.update(groups)
 
     @classmethod
-    def get_by_id(
-        cls, id_: str, interface: Optional[str] = None
-    ) -> Optional[Component]:
+    def get_by_id(cls, id_: str) -> Optional[Component]:
         """
-        Retrieves a component instance, searching by it's `id`. If `interface` is provided the search will consider only the specified `interface` components. Providing `interface` makes the search faster.
+        Retrieves a component instance, searching by it's `id`.
 
         :param id_: The component's `id`.
-        :param interface: The component's parent `interface`.
         :return: The component instance, if found, otherwise `None`.
         """
 
-        # if 'interface' is specified and exists in the components dict, limit the search
-        if interface is not None and interface in cls.COMPONENTS:
-            for component in cls.COMPONENTS[interface]:
-                if component.id == id_:
-                    return component
-            else:
-                return None
-
-        for interface in cls.COMPONENTS:
-            for component in cls.COMPONENTS[interface]:
-                if component.id == id_:
-                    return component
-
-        return None
+        return cls.COMPONENTS.get(id_)
 
     @classmethod
-    def get_by_interface(cls, interface: str) -> Optional[Tuple[Component]]:
+    def update(cls) -> None:
         """
-        Retrieves all the components instances for a given `interface`.
-
-        :param interface: The interface from which the components are retrieved.
-        :return: A tuple of the components instances, if any, otherwise None.
+        Updates the currently currently focused interface.
         """
 
-        if interface in cls.COMPONENTS:
-            return tuple(cls.COMPONENTS[interface])
-
-        return None
+        if cls._current_focus is not None:
+            cls._current_focus.update()
 
     @classmethod
-    def get_by_type(
-        cls, type_: str, interface: Optional[str] = None
-    ) -> Optional[Tuple[Component]]:
+    def draw(cls) -> None:
         """
-        Retrieves all the components instances for a given component `type`. If `interface` is provided the search will consider only the specified `interface` components.
-
-        :param type_: The `type` of components to search for.
-        :param interface: The `interface` in which to search for the components.
-        :return: A tuple of the components instances, if any, otherwise None.
+        Draws the currently focused interface to the display.
         """
 
-        # if 'interface' is specified and exists in the components dict, limit the search
-        if interface is not None and interface in cls.COMPONENTS:
-            c = tuple(
-                [
-                    component
-                    for component in cls.COMPONENTS[interface]
-                    if component.type == type_
-                ]
-            )
-
-            if len(c) > 0:
-                return c
-
-            return None
-
-        c = []
-        for interface in cls.COMPONENTS:
-            c.extend(
-                [
-                    component
-                    for component in cls.COMPONENTS[interface]
-                    if component.type == type_
-                ]
-            )
-
-        if len(c) > 0:
-            return tuple(c)
-
-        return None
+        if cls._current_focus is not None:
+            cls._current_focus.draw(cls._display)
 
     @classmethod
-    def update(cls, *interfaces: Tuple[str, ...]) -> None:
+    def handle(cls) -> None:
         """
-        Updates all the components (Calling `Component.update` through `ComponentGroup.update`). If `interfaces` are provided, updates only the specified interface's components.
-
-        :param interfaces: A tuple of the interfaces that should be updated.
+        Updates, renders and handles hover events in the currently focused interface.
         """
 
-        cls.GROUPS["generic"].update(interfaces)
+        if cls._current_focus is not None:
+            cls.update()
+            cls.draw()
+            cls.handle_hover()
 
     @classmethod
-    def draw(cls, surface: pygame.Surface, *interfaces: Tuple[str, ...]) -> None:
-        """
-        Renders all of the loaded components to the specified `surface`. If `interfaces` are provided, renders only the components contained in the specified `interfaces`.
-
-        :param surface: A pygame Surface in which to render the components.
-        :param interfaces: A tuple of `interfaces` whose components should be rendered.
-        """
-
-        cls.GROUPS["generic"].draw(surface, interfaces)
-
-    @classmethod
-    def change_focus(cls, interface: Optional[str]) -> None:
+    def change_focus(cls, interface: str) -> None:
         """
         Changes the currently focused interface.
 
-        :param interface: The interface that should be focused. Can be `None` in order to not set any focus.
+        :param interface: Name of the interface to give focus.
         """
 
-        if interface is not None and interface not in cls.GROUPS["interfaces"]:
-            return
-
-        cls._current_focus = interface
+        if interface in cls.INTERFACES:
+            cls._current_focus = cls.INTERFACES[interface]
 
     @classmethod
-    def get_focused(cls) -> str:
-        """Returns the name of the currently focused interface."""
+    def get_focused(cls) -> Optional[Interface]:
+        """
+        Gives access to the currently focused interface instance.
+
+        :return: Currently focused interface.
+        """
+
         return cls._current_focus
 
     @classmethod
-    def update_focused(cls) -> None:
+    def emit_click(cls) -> None:
         """
-        Updates all the components (Calling `Component.update` through `ComponentGroup.update`) in the currently focused interface.
+        Emits a click event on the currently focused interface.
         """
 
-        if (
-            cls._current_focus is not None
-            and cls._current_focus in cls.GROUPS["interfaces"]
-        ):
-            cls.GROUPS["interfaces"][cls._current_focus].update()
+        if cls._current_focus is not None:
+            cls._current_focus.emit_click()
 
     @classmethod
-    def draw_focused(cls, surface: pygame.Surface) -> None:
+    def emit_input(cls, event) -> None:
         """
-        Renders the components contained in the currently focused interface to the specified `surface`.
+        Emits an input event in the currently focused interface.
 
-        :param surface: A pygame Surface in which to render the components.
+        :param event: Pygame KEYDOWN event.
         """
-        if (
-            cls._current_focus is not None
-            and cls._current_focus in cls.GROUPS["interfaces"]
-        ):
-            cls.GROUPS["interfaces"][cls._current_focus].draw(surface)
+
+        if cls._current_focus is not None:
+            cls._current_focus.emit_input(event)
 
     @classmethod
-    def emit_click(cls, *interfaces: Tuple[str, ...]) -> None:
+    def handle_hover(cls) -> None:
         """
-        Calls `Clickable.handle_click` for all `Clickable` components, through `ClickableGroup.handle_click`. If `interfaces` are provided, emit the click only for the components in the specified `interfaces`. This also works to activate inputs, as a special case.
-
-        :param interfaces: A tuple containing the names of the interfaces to limit the click event handling to.
+        Handles hover in the currently focused interface.
         """
 
-        for group in cls.GROUPS["types"]:
-            if isinstance((g := cls.GROUPS["types"][group]), ClickableGroup):
-                g.handle_click(interfaces)
-
-    @classmethod
-    def handle_hover(cls, *interfaces: Tuple[str, ...]) -> None:
-        """
-        Calls `HoverableGroup.handle_hover` for all `Hoverable` components, through `HoverableGroup.handle_hover`. If `interfaces` are provided, handles hover events only for the specified `interfaces`.
-
-        :param interfaces: A tuple containing the name of the interfaces to limit the hover handling to.
-        """
-
-        for group in cls.GROUPS["types"]:
-            if isinstance((g := cls.GROUPS["types"][group]), HoverableGroup):
-                g.handle_hover(interfaces)
-
-    @classmethod
-    def emit_input(cls, event, *interfaces: Tuple[str, ...]) -> None:
-        """
-        Calls `Input.handle_input` for all `Input` components, through `InputGroup.handle_input`. If `interfaces` are provided, handles input events only for the specified `interfaces`.
-
-        :param interfaces: A tuple containing the name of the interfaces to limit the input handling to.
-        """
-
-        for group in cls.GROUPS["types"]:
-            if isinstance((g := cls.GROUPS["types"][group]), InputGroup):
-                g.handle_input(event, interfaces)
-
-    @classmethod
-    def just_work(cls, surface: pygame.Surface) -> None:
-        """
-        Just works. Calls the relevant methods for a basic interface workflow. This method will call, in the following order:
-            - PyInterfacer.update_focused
-            - PyInterfacer.draw_focused(surface)
-            - PyInterfacer.handle_hover(PyInterfacer.get_focused())
-
-        It works with the currently focused interface.
-
-        :param surface: The pygame `Surface` to render to.
-        """
-
-        cls.update_focused()
-        cls.draw_focused(surface)
-        cls.handle_hover(cls._current_focus)
+        if cls._current_focus is not None:
+            cls._current_focus.handle_hover()
 
 
 class DefaultComponentTypes(Enum):
@@ -517,5 +295,5 @@ class InvalidInterfaceFileException(Exception):
 class InvalidDisplayTypeException(Exception):
     def __init__(self, interface: str) -> None:
         super().__init__(
-            f"The specified display type for the interface '{interface}' is invalid. It should be either 'default' or 'grid'."
+            f"The specified display type for the interface '{interface}' is invalid. It should be either 'default' or 'grid'. Note that grid displays shoud provide 'rows' and 'columns'."
         )
