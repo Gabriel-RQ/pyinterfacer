@@ -57,7 +57,8 @@ class Component(pygame.sprite.Sprite):
     y: int,
     width: int? = None,
     height: int? = None,
-    grid_cell: int? = None
+    grid_cell: int? = None,
+    style: str? = None
 
     # Does nothing by default, should be overwritten with image preloading logic, if needed.
     def preload_image() -> None
@@ -184,29 +185,32 @@ class ButtonGroup(ClickableGroup, HoverableGroup):
 
 # Interface handling (1.0 New proposal)
 
-This proposal aims to enhance on what's been defined in the first proposal, including, but not limited to the following:
+This proposal aims to enhance and simplify what's been defined in the first proposal, including, but not limited to the following:
 
 - New Interface class to store interface related information
 - Each interface creates it's own Surface
-- PyInterfacer receives the "display" as an attribute, instead of width and height, and use it to render
+- Each interface allows for the creation of reusable style classes
+- PyInterfacer receives the "display" (screen to render to) as an attribute, instead of width and height, and use it to render
 
 ```py
 # This class handles all the interfaces
 class PyInterfacer:
     _display: pygame.Surface # Where to render everything
-    _current_focus: Interface # Controls the current focused interface
+    _current_focus: Interface? # Controls the current focused interface
 
-    STATS: Counter # Keeps track of how many interfaces and components of each type are loaded
     INTERFACES: Dict[str, Interface] # Stores all the interfaces, by their name
     COMPONENTS: Dict[str, Component] # Stores all the components, by their id
 
     _COMPONENT_CONVERSION_TABLE: Dict[str, Component] # maps a type (key) to a component class (value). Used to handle conversion from YAML atributes to component instances
     _GROUP_CONVERSION_TABLE: Dict[str, ComponentGroup] # Maps a component type (key) to a component group. Used to handle the creation of specific groups for some component types
 
+    # Configures the display to render to (by default, pygame.display.get_surface())
+    def set_display(display: pygame.Surface) -> None
+
     # Loads all the interface files in a directory
     def load_all(path: str) -> None
     # Loads a single interface from a file
-    def load_interface(file: str) -> None
+    def load(file: str) -> None
     # Unloads all interfaces. Should not be called while still updating or rendering any interface.
     def unload() -> None
 
@@ -217,10 +221,6 @@ class PyInterfacer:
 
     # Retrieves a component instance by it's ID. If 'interface' is provided, the search will look directly under the interface scope.
     def get_by_id(id_: str, interface: str? = None) -> Component?
-    # Retrieves all the components in an interface
-    def get_by_interface(interface: str) -> Tuple[Component]?
-    # Retrieves all the components for a type. If 'interface' is provided, the search will look directly under the interface scope.
-    def get_by_type(type_: str, interface: str? = None) -> Tuple[Component]?
 
     # Updates the currently focused interface
     def update() -> None
@@ -235,32 +235,49 @@ class PyInterfacer:
     def get_focused() -> Interface
 
     # Emits a call to handle a click for the Clickable components in the currently focused interface.
-    def emit_click(cls, *interfaces: Tuple[str, ...]) -> None
+    def emit_click(cls) -> None
+    # Emits a call to handle an input for the Input components in the currently focused interface.
+    def emit_input(cls, event)
     # Handles hover events for all of the Hoverable components in the currently focused interface.
-    def handle_hover(cls, *interfaces: Tuple[str, ...]) -> None
-
+    def handle_hover(cls) -> None
 
 # This class handles a single interface
 class Interface:
+    COMPONENT_CONVERSION_TABLE: Dict[str, Component]
+    GROUP_COMPONENT_TABLE: Dict[str, ComponentGroup]
+
     name: str
     display: "default" | "grid"
     rows: int?
     columns: int?
-    surface: pygame.Surface
+    width: int?
+    height: int?
 
-    _group: ComponentGroup
+    surface: pygame.Surface
+    _group: pygame.sprite.Group
+    _type_groups: Dict[str, ComponentGroup] # Groups components (values) by type (keys)
     _components: List[Component]
     _style_classes: Dict[str, Dict] # Maps a style class (key) to it's information (value)
 
     # Updates the interface
     def update() -> None
     # Renders the interface
-    def draw(display: pygame.Surface) -> None
+    def draw(surface: pygame.Surface) -> None
     # Renders and updates the interface to the display
-    def handle(display: pygame.Surface) -> None
+    def handle(surface: pygame.Surface) -> None
 
     # Returns a dictionary containg the components of the interface, grouped by their 'id'
     def component_dict() -> Dict[str, Component]
+
+    # Emits a call to handle a click for the Clickable components in the interface.
+    def emit_click(cls) -> None
+    # Emits a call to handle an input for the Input components in the interface.
+    def emit_input(cls, event)
+    # Handles hover events for all of the Hoverable components in the interface.
+    def handle_hover(cls) -> None
+
+    # Sets the mappings for component conversion from YAML description
+    def set_conversion_tables(component: Dict[str, Component]?, group: Dict[str, Component]?) -> None
 ```
 
 # Interface handling (First Proposal)
@@ -318,6 +335,8 @@ class PyInterfacer:
     def emit_click(cls, *interfaces: Tuple[str, ...]) -> None
     # Handles hover events for all of the Hoverable components. If '*interfaces' are provided, limit the handling to the specified interfaces.
     def handle_hover(cls, *interfaces: Tuple[str, ...]) -> None
+    # Emits an input event for the Input components. If '*interfaces' are provided, limit the event to the specified interfaces.
+    def emit_input(cls, event, *interfaces: Tuple[str, ...]) -> None
 
     # Update and render all the components in the currently focused interface.
     def just_work(cls, surface: pygame.Surface) -> None
@@ -329,9 +348,13 @@ Each interface must be represented by a single YAML file. The file structure sho
 
 ```yaml
 interface: interface-name
+background: color-or-image # optional, default to 'black'
 display: display-type
 rows: rows-amount-if-grid
 columns: columns-amount-if-grid
+styles: # styles are optional
+    - name: style-class-name
+      attribute: value
 components:
     - type: component-type
       atribute: value
