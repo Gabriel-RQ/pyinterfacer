@@ -72,7 +72,8 @@ class Interface:
             img = pygame.transform.scale(img, self.size)
             self._bg_image = img
         except:
-            self._bg_color = bg
+            if bg is not None:
+                self._bg_color = bg
 
     def _parse_components(self, components: List[Dict]) -> None:
         """
@@ -83,8 +84,8 @@ class Interface:
 
         if self.display == "grid":
             # Calculate the size of a grid cell
-            grid_width = self.size[0] // self.rows
-            grid_height = self.size[1] // self.columns
+            grid_width = self.size[0] // self.columns
+            grid_height = self.size[1] // self.rows
         else:
             grid_width = grid_height = None
 
@@ -167,8 +168,8 @@ class Interface:
             column = component["grid_cell"] % columns
 
             # centers the component position at it's grid position
-            component["x"] = int((row * gw) + (gw / 2))
-            component["y"] = int((column * gh) + (gh / 2))
+            component["x"] = int((column * gw) + (gw / 2))
+            component["y"] = int((row * gh) + (gh / 2))
 
             # if width and height are not provided, make the component use the grid's size instead; if they are provided as 'auto', use default component sizing behavior
             if "width" not in component:
