@@ -4,9 +4,10 @@
 """
 
 import pygame
+import os
 
 from ..components import Component
-from ..groups import ComponentGroup
+from ..groups import ComponentGroup, ClickableGroup, HoverableGroup, InputGroup
 from ..util import percent_to_float
 from typing import List, Dict, Literal, Optional, Tuple
 
@@ -18,6 +19,7 @@ class Interface:
     def __init__(
         self,
         name: str,
+        background: str,
         size: Tuple[int, int],
         components: List[Dict],
         display: Literal["default", "grid"],
@@ -31,13 +33,17 @@ class Interface:
         self.columns = columns
         self.size = size
 
-        self.surface = pygame.Surface(self.size)
+        self.surface = pygame.Surface(self.size).convert()
+        self._bg_color = "black"
+        self._bg_image: Optional[pygame.Surface] = None
+
         self._group = pygame.sprite.Group()
         self._type_groups: Dict[str, ComponentGroup] = {}
 
         self._components: List[Component] = []
         self._style_classes = styles
 
+        self._parse_background(background)
         self._parse_components(components)
 
     @classmethod
@@ -56,6 +62,18 @@ class Interface:
         cls.COMPONENT_CONVERSION_TABLE = component
         cls.GROUP_CONVERSION_TABLE = group
 
+    def _parse_background(self, bg) -> None:
+        """
+        Tries to load the 'background' interface attribute as an image, if it fails, considers it a color and uses it to fill the surface.
+        """
+
+        try:
+            img = pygame.image.load(os.path.abspath(bg))
+            img = pygame.transform.scale(img, self.size)
+            self._bg_image = img
+        except:
+            self._bg_color = bg
+
     def _parse_components(self, components: List[Dict]) -> None:
         """
         Handles the parsing of the components loaded from the YAML interface file.
@@ -71,6 +89,8 @@ class Interface:
             grid_width = grid_height = None
 
         for component in components:
+            # Converts style class values
+            self._parse_style_classes(component)
 
             # Converts percentage values
             self._parse_percentage_values(component, grid_width, grid_height)
@@ -82,9 +102,6 @@ class Interface:
                 grid_height,
                 self.columns,
             )
-
-            # Converts style class values
-            self._parse_style_classes(component)
 
             # instantiates a component according to it's type
             c = Interface.COMPONENT_CONVERSION_TABLE[component["type"].lower()](
@@ -210,6 +227,12 @@ class Interface:
 
         :param surface: Pygame Surface to render this interface to.
         """
+
+        if self._bg_image:
+            self.surface.blit(self._bg_image, (0, 0))
+        else:
+            self.surface.fill(self._bg_color)
+
         self._group.draw(self.surface)
         surface.blit(self.surface, (0, 0))
 
@@ -222,6 +245,35 @@ class Interface:
 
         self.update()
         self.draw(surface)
+
+    def emit_click(self) -> None:
+        """
+        Calls `Clickable.handle_click` for all `Clickable` components in the interface, through `ClickableGroup.handle_click`.
+        """
+
+        for group in self._type_groups:
+            if isinstance((g := self._type_groups[group]), ClickableGroup):
+                g.handle_click((self.name,))
+
+    def emit_input(self, event) -> None:
+        """
+        Calls `Input.handle_input` for all `Input` components in the interface, through `InputGroup.handle_input`.
+
+        :param event: Pygame KEYDOWN event.
+        """
+
+        for group in self._type_groups:
+            if isinstance((g := self._type_groups[group]), InputGroup):
+                g.handle_input(event, (self.name,))
+
+    def handle_hover(self) -> None:
+        """
+        Calls `HoverableGroup.handle_hover` for all `Hoverable` components in the interface, through `HoverableGroup.handle_hover`
+        """
+
+        for group in self._type_groups:
+            if isinstance((g := self._type_groups[group]), HoverableGroup):
+                g.handle_hover((self.name,))
 
     def component_dict(self) -> Dict[str, Component]:
         """
