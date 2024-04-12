@@ -1,0 +1,42 @@
+interface: game
+background: assets/images/space.png
+display: default
+styles:
+  - name: font-style
+    font: assets/font/space_age.ttf
+    font_color: "#c1c1c1"
+    font_size: 32
+components:
+  - type: text-button
+    id: game-menu-btn
+    style: font-style
+    text: _~Menu~
+    focus_color: "#846fbd"
+    x: 85%
+    y: 50
+
+  - type: player
+    id: player
+    x: 50%
+    y: 85%
+    width: 156
+    height: 156
+    spritesheet: assets/images/player/spaceship16x16.png
+    sprite_width: 16
+    sprite_height: 16
+    delay: 25
+    colorkey: black
+    speed: 3
+
+  - type: text
+    id: player-hp-txt
+    style: font-style
+    text: "100"
+    x: 50%
+    y: 98%
+
+  - type: enemy-spawner
+    id: enemy-spawner
+    x: 50%
+    y: -50
+    wave_size: 3

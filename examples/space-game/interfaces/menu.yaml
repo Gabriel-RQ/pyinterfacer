@@ -1,0 +1,45 @@
+interface: menu
+background: assets/images/space2.jpg
+display: default
+styles:
+  - name: font-style
+    font: assets/font/space_age.ttf
+    font_size: 52
+    font_color: "#c1c1c1"
+    focus_color: "#846fbd"
+    x: 50%
+components:
+  - type: text
+    id: menu-title
+    style: font-style
+    text: "{"
+    font_size: 124
+    y: 25%
+
+  - type: text
+    id: menu-subtitle
+    style: font-style
+    text: ~pew ~pew
+    y: 35%
+
+  - type: text-button
+    id: menu-start-btn
+    style: font-style
+    text: _Start~
+    y: 60%
+    font_size: 42
+
+  - type: text-button
+    id: menu-exit-btn
+    style: font-style
+    text: ~Exit~
+    y: 70%
+    font_size: 42
+
+  - type: text-button
+    id: menu-info-btn
+    style: font-style
+    text: _info
+    font_size: 24
+    x: 85%
+    y: 95%

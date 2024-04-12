@@ -1,0 +1,79 @@
+interface: info
+background: assets/images/space2.jpg
+display: default
+styles:
+  - name: font-style
+    font: assets/font/space_age.ttf
+    font_color: "#c1c1c1"
+    font_size: 28
+components:
+  - type: text-button
+    id: info-menu-btn
+    style: font-style
+    text: Menu
+    focus_color: "#846fbd"
+    x: 85%
+    y: 50
+
+  - type: text
+    id: _
+    style: font-style
+    x: 50%
+    y: 20%
+    text: A 2d space shooting game,
+
+  - type: text
+    id: _
+    style: font-style
+    x: 50%
+    y: 30%
+    text: Created as an example
+    font_size: 24
+
+  - type: text
+    id: _
+    style: font-style
+    x: 50%
+    y: 35%
+    text: of PyInterfacer capabilities.
+    font_size: 24
+
+  - type: text
+    id: _
+    style: font-style
+    x: 50%
+    y: 60%
+    text: Made by Gabriel-RQ
+    font_size: 22
+
+  - type: text
+    id: _
+    style: font-style
+    x: 50%
+    y: 70%
+    text: Font by Justin Callaghan
+    font_size: 22
+
+  - type: text
+    id: _
+    style: font-style
+    x: 50%
+    y: 75%
+    text: https://www.dafont.com/space-age.font
+    font_size: 16
+
+  - type: text
+    id: _
+    style: font-style
+    x: 50%
+    y: 80%
+    text: Laser sound by CHAKONG
+    font_size: 16
+
+  - type: text
+    id: _
+    style: font-style
+    x: 50%
+    y: 85%
+    text: Background music by mrpoly
+    font_size: 16
