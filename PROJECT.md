@@ -278,6 +278,9 @@ class Interface:
 
     # Sets the mappings for component conversion from YAML description
     def set_conversion_tables(component: Dict[str, Component]?, group: Dict[str, Component]?) -> None
+
+    # Adds a subgroup to the interface. Subgroups are updated alongside the interface group, and rendered into the interface surface.
+    def add_subgroup(self, group: pygame.sprite.Group) -> None
 ```
 
 # Interface handling (First Proposal)

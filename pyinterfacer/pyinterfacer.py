@@ -3,6 +3,16 @@
 @description: PyInterfacer class. This is the main class of the library, and it manages all the loaded interfaces.
 """
 
+"""
+PROPOSAL: Create a binding mapping and '.bind()' method for PyInterfacer. It would allow binding some component attribute value to another component's attribute value (for example, a 'Player' component HP to a 'Text' component text). It would be updated in PyInterfacer.update, making it almost seamless for the end user.
+
+PROPOSAL: Create a action mapping where the keys are the ID of some 'Clickable' component and the values are the actions they should execute. This would make setting actions for 'Clickable' components much easier.
+
+PROPOSAL: Allow components to have multiple style classes. Style classes are already proven effective to reduce styling code, but allowing only one per component may not be enough, specially for more complex components.
+
+PROPOSAL: Make PyInterfacer save a pickle serialized file of itself when interfaces are loaded, check if this file exists before loading, and deserialize it if it does. Should be even faster than parsing every interface each time the program is executed.
+"""
+
 import pygame
 import yaml
 import os

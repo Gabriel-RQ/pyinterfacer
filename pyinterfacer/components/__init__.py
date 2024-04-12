@@ -1,3 +1,7 @@
+"""
+Components from PyInterfacer's default component set.
+"""
+
 from .component import Component
 from .text import Text
 from .clickable import Clickable
