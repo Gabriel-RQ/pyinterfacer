@@ -39,6 +39,9 @@ class Interface:
 
         self._group = pygame.sprite.Group()
         self._type_groups: Dict[str, ComponentGroup] = {}
+        self._subgroups: List[pygame.sprite.Group] = (
+            []
+        )  # subgroups to be rendered in this interface
 
         self._components: List[Component] = []
         self._style_classes = styles
@@ -68,7 +71,7 @@ class Interface:
         """
 
         try:
-            img = pygame.image.load(os.path.abspath(bg))
+            img = pygame.image.load(os.path.abspath(bg)).convert()
             img = pygame.transform.scale(img, self.size)
             self._bg_image = img
         except:
@@ -222,6 +225,10 @@ class Interface:
         """
         self._group.update()
 
+        if len(self._subgroups) > 0:
+            for group in self._subgroups:
+                group.update()
+
     def draw(self, surface: pygame.Surface) -> None:
         """
         Draws this interface to `surface`.
@@ -235,6 +242,11 @@ class Interface:
             self.surface.fill(self._bg_color)
 
         self._group.draw(self.surface)
+
+        if len(self._subgroups) > 0:
+            for group in self._subgroups:
+                group.draw(self.surface)
+
         surface.blit(self.surface, (0, 0))
 
     def handle(self, surface: pygame.Surface) -> None:
@@ -284,3 +296,13 @@ class Interface:
         """
 
         return {c.id: c for c in self._components}
+
+    def add_subgroup(self, group: pygame.sprite.Group) -> None:
+        """
+        Adds a subgroup to the interface. Subgroups are rendered to the interface surface and updated. If the `group` was already added, ignore.
+
+        :param group: A pygame Group to add to the subgroups.
+        """
+
+        if group not in self._subgroups:
+            self._subgroups.append(group)
