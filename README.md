@@ -392,6 +392,8 @@ SpritesheetAnimation:
 
 # Examples
 
+More examples can be found at [examples/](./examples/). 
+
 Below, an example project:
 
 ```py
@@ -409,6 +411,7 @@ FPS = 120
 PyInterfacer.set_display(screen)
 
 PyInterfacer.load("example-interface.yaml")
+PyInterfacer.change_focus("example-interface")
 
 running = True
 while running:
