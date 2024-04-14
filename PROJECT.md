@@ -233,6 +233,8 @@ class PyInterfacer:
     def change_focus(interface: str) -> None
     # Returns the currently focused interface
     def get_focused() -> Interface
+    # Returns the instance of the provided `interface`, if found, otherwise None.
+    def get_interface(interface: str) -> Interface?
 
     # Emits a call to handle a click for the Clickable components in the currently focused interface.
     def emit_click(cls) -> None

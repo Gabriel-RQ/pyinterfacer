@@ -6,5 +6,6 @@ setup(
     version="1.0.0",
     description="A modular library for handling interfaces in pygame projects.",
     author="Gabriel RQ",
+    url="https://github.com/Gabriel-RQ/PyInterfacer",
     install_requires=["PyYAML", "pygame-ce"],
 )

@@ -204,6 +204,9 @@ styles:
     font: Arial
     font_size: 56
     font_color: red
+
+  - name: x-centered
+    x: 50%
 components:
   - type: text
     id: txt-1
@@ -214,13 +217,14 @@ components:
 
  - type: text
    id: txt-2
-   style: txt-style
+   style: [x-centered, txt-style]
    text: "Look at that, a fellow component"
-   x: 50%
    y: 150
 ```
 
 By doing that, our `txt-1` and `txt-2` Text components will use the font information from the `txt-style` style class. Notice that `txt-1` overwrites the `font_size` attribute, and will use 128 for it's font size, instead of 56.
+
+Each component can define a single style class, or a list of style classes. If a list is provided, the first style class on the list will have the highest priority.
 
 # Components and attributes
 
@@ -392,7 +396,7 @@ SpritesheetAnimation:
 
 # Examples
 
-More examples can be found at [examples/](./examples/). 
+More examples can be found at [examples/](./examples/).
 
 Below, an example project:
 
