@@ -186,18 +186,33 @@ class Interface:
 
     def _parse_style_classes(self, component: Dict) -> None:
         """
-        Updates the component with it's style class attributes.
+        Updates the component with it's style classes attributes.
 
         :param component: Dictionary representing the component.
         """
 
-        # Verifies if the component sets a valid style class
-        if "style" in component and (s := component["style"]) in self._style_classes:
-            # Use only the styles defined in the style class that are not "overwritten" in the component declaration
-            for attr, value in self._style_classes[s].items():
-                if attr not in component:
-                    component[attr] = value
+        # Verifies if the component sets style classes
+        if "style" in component and self._style_classes is not None:
+            # Handles a single style class
+            if type(s := component["style"]) is str and s in self._style_classes:
+                # Use only the styles defined in the style class that are not "overwritten" in the component declaration
+                for attr, value in self._style_classes[s].items():
+                    if attr not in component:
+                        component[attr] = value
+                return
 
+            if len(component["style"]) == 0:
+                return
+            
+            # Handles multiple style classes
+            for style in component["style"]:
+                if style in self._style_classes:
+                    for attr, value in self._style_classes[style].items():
+                        # By default, the component's style class attributes will be overwritten by the component's own attributes
+                        # Because of the way this is handled, the order in which the style classes are declared matters. The first style class will have the highest priority, and will not be overwritten by the following ones
+                        if attr not in component:
+                            component[attr] = value
+                 
     def _handle_new_type_group(self, component: Component) -> None:
         """
         Creates new component groups for component types that don't have a group yet.
