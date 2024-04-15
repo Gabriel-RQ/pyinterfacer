@@ -394,6 +394,29 @@ SpritesheetAnimation:
   sprite_height: int
 ```
 
+## Bindings
+
+Some times you may need some component's attribute value to be the same as another component's attribute value, and the changes in the first component's attribute value to be reflected in the second component's attribute value. For example: we have a Player component, with an `hp` attribute, and Text component, with it's `text` attribute; we want the Text component to display the player's current HP, dynamically; instead of manually updating the Text component `text` value to be the same as the Player`s component `hp` value, we can bind them both, and let PyInterfacer take care of that.
+
+Here's our example in code:
+
+```py
+import pygame
+from pyinterfacer import PyInterfacer
+
+pygame.init()
+
+display = pygame.display.set_mode(size, flags, depth)
+
+PyInterfacer.load("interface.yaml")
+
+# Consider 'interface.yaml' to have components with id 'player' and 'player-hp-txt'
+# We them bind the 'player' component 'hp' attribute value to the 'player-hp-txt' component 'text' attribute value. Now any changes on the player 'hp' value will be updated in the player hp text as well.
+PyInterfacer.bind("player", "hp", "player-hp-txt", "text")
+
+<handle game loop>
+```
+
 # Examples
 
 More examples can be found at [examples/](./examples/).

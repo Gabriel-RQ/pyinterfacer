@@ -260,6 +260,7 @@ class Interface:
     _type_groups: Dict[str, ComponentGroup] # Groups components (values) by type (keys)
     _components: List[Component]
     _style_classes: Dict[str, Dict] # Maps a style class (key) to it's information (value)
+    _bindings: List[Dict] # List of component bindings in the format {"from": (component1, attribute1), "to": (component2, attribute2)}
 
     # Updates the interface
     def update() -> None

@@ -45,6 +45,7 @@ class Interface:
 
         self._components: List[Component] = []
         self._style_classes = styles
+        self._bindings = [] # A list of binding dictionaries that will be used to bind components to each other. Called when updating the interface The dictionary should have the following structure: {"from": (component1, attribute1), "to": (component2, attribute2)}
 
         self._parse_background(background)
         self._parse_components(components)
@@ -237,12 +238,26 @@ class Interface:
     def update(self) -> None:
         """
         Updates the interface through `pygame.sprite.Group.update()`.
+        This method also updates the subgroups and bindings.
         """
+
+        # Update main interface group
         self._group.update()
 
+        # Update subgroups
         if len(self._subgroups) > 0:
             for group in self._subgroups:
                 group.update()
+
+        # Update bindings
+        if len(self._bindings) > 0:
+            for binding in self._bindings:
+                c1, a1 = binding["from"]
+                c2, a2 = binding["to"]
+
+                # the binding must convert the value to the type of the attribute it's binding to
+                a2_type = type(getattr(c2, a2))
+                setattr(c2, a2, a2_type(getattr(c1, a1)))
 
     def draw(self, surface: pygame.Surface) -> None:
         """
@@ -321,3 +336,15 @@ class Interface:
 
         if group not in self._subgroups:
             self._subgroups.append(group)
+
+    def create_binding(self, c1: Component, a1: str, c2: Component, a2: str) -> None:
+        """
+        Creates a binding between two components. When the first component's attribute changes, the second component's attribute will be updated to match it.
+
+        :param c1: Component to bind.
+        :param a1: Attribute of component 1.
+        :param c2: Component to bind to.
+        :param a2: Attribute of component 2.
+        """
+
+        self._bindings.append({"from": (c1, a1), "to": (c2, a2)})

@@ -4,9 +4,7 @@
 """
 
 """
-PROPOSAL: Create a binding mapping and '.bind()' method for PyInterfacer. It would allow binding some component attribute value to another component's attribute value (for example, a 'Player' component HP to a 'Text' component text). It would be updated in PyInterfacer.update, making it almost seamless for the end user.
-
-PROPOSAL: Create a action mapping where the keys are the ID of some 'Clickable' component and the values are the actions they should execute. This would make setting actions for 'Clickable' components much easier.
+PROPOSAL: Create an action mapping where the keys are the ID of some 'Clickable' component and the values are the actions they should execute. This would make setting actions for 'Clickable' components much easier.
 
 PROPOSAL: Make PyInterfacer save a pickle serialized file of itself when interfaces are loaded, check if this file exists before loading, and deserialize it if it does. Should be even faster than parsing every interface each time the program is executed.
 """
@@ -282,6 +280,24 @@ class PyInterfacer:
 
         if cls._current_focus is not None:
             cls._current_focus.handle_hover()
+
+    @classmethod
+    def bind(cls, c1: str, a1: str, c2: str, a2: str) -> None:
+        """
+        Binds a component attribute to another component attribute.
+
+        :param c1: ID of the component to bind.
+        :param a1: Attribute of the component to bind.
+        :param c2: ID of the component to bind to.
+        :param a2: Attribute of the component to bind to.
+        """
+
+        if c1 in cls.COMPONENTS and c2 in cls.COMPONENTS:
+            # binding is done at interface level
+            i = cls.get_interface(cls.COMPONENTS[c1].interface)
+            
+            if i is not None:
+                i.create_binding(cls.COMPONENTS[c1], a1, cls.COMPONENTS[c2], a2)
 
 
 class DefaultComponentTypes(Enum):
