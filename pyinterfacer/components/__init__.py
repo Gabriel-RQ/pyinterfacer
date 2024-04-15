@@ -12,3 +12,4 @@ from .image import Image
 from .input import Input
 from .animation import Animation
 from .spritesheet_animation import SpritesheetAnimation
+from .paragraph import Paragraph

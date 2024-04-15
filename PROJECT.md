@@ -78,6 +78,12 @@ class Text(Component):
     antialias: bool? = True,
 
 
+# Display multiple lines of text
+class Paragraph(Text):
+    lines: List[str], # list of texts that compose each line of the paragraph
+    line_height: int?
+
+
 # Clickable components should all inherit from this class.
 class Clickable(Component):
     action: Callable?,
@@ -134,6 +140,7 @@ class SpritesheetAnimation(Animation):
     spritesheet: str,
     sprite_width: int,
     sprite_height: int
+
 ```
 
 The `Component` class also defines a `subtype` atribute as None by default. This atribute should be set by custom components, to indicate which of the default component set types the custom component belongs to. The `subtype` is used for group handling at parsing.

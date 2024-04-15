@@ -3,10 +3,6 @@
 @description: PyInterfacer class. This is the main class of the library, and it manages all the loaded interfaces.
 """
 
-"""
-PROPOSAL: Make PyInterfacer save a pickle serialized file of itself when interfaces are loaded, check if this file exists before loading, and deserialize it if it does. Should be even faster than parsing every interface each time the program is executed.
-"""
-
 import pygame
 import yaml
 import os
@@ -39,6 +35,7 @@ class PyInterfacer:
         "hoverable": Hoverable,
         "image": Image,
         "input": Input,
+        "paragraph": Paragraph,
         "spritesheet-animation": SpritesheetAnimation,
         "text-button": TextButton,
         "text": Text,
@@ -340,6 +337,7 @@ class DefaultComponentTypes(Enum):
     HOVERABLE = "hoverable"
     IMAGE = "image"
     INPUT = "input"
+    PARAGRAPH = "paragraph"
     SPRITESHEET_ANIMATION = "spritesheet-animation"
     TEXT_BUTTON = "text-button"
     TEXT = "text"

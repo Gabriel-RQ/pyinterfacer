@@ -260,6 +260,26 @@ Text:
   italic: bool?
   antialias: bool?
 
+Paragraph:
+  id: str
+  type: str
+  interface: str
+  x: int
+  y: int
+  width: int?
+  height: int?
+  grid_cell: int?
+  style: str?
+  text: str # this attribute will not be used by the paragraph component
+  font: str?
+  font_size: int?
+  font_color: str?
+  bold: bool?
+  italic: bool?
+  antialias: bool?
+  lines: List[str] # each string on the list will be rendered in a line
+  line_height: int?
+
 Clickable:
   id: str
   type: str

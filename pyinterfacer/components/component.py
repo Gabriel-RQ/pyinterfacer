@@ -15,6 +15,7 @@ default_component_types = Literal[
     "hoverable",
     "image",
     "input",
+    "paragraph",
     "spritesheet-animation",
     "text-button",
     "text",
