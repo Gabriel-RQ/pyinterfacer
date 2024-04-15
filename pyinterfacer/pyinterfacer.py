@@ -4,8 +4,6 @@
 """
 
 """
-PROPOSAL: Create an action mapping where the keys are the ID of some 'Clickable' component and the values are the actions they should execute. This would make setting actions for 'Clickable' components much easier.
-
 PROPOSAL: Make PyInterfacer save a pickle serialized file of itself when interfaces are loaded, check if this file exists before loading, and deserialize it if it does. Should be even faster than parsing every interface each time the program is executed.
 """
 
@@ -14,7 +12,7 @@ import yaml
 import os
 import re
 
-from typing import Optional, Dict
+from typing import Optional, Dict, Callable
 from enum import Enum
 from .interface import Interface
 from .groups import *
@@ -53,6 +51,9 @@ class PyInterfacer:
         "text-button": ButtonGroup,
         "input": InputGroup,
     }
+
+    # Maps a component id (key) to an action callback (value). Used to map actions easily for Clickable components
+    _COMPONENT_ACTION_MAPPING: Dict[str, Callable] = {}
 
     @classmethod
     def set_display(cls, display: pygame.Surface) -> None:
@@ -159,6 +160,9 @@ class PyInterfacer:
         )
         cls.INTERFACES[i.name] = i
         cls.COMPONENTS.update(i.component_dict())
+
+        # Updates actions for Clickable components
+        cls._update_actions()
 
     @classmethod
     def add_custom_components(cls, components: Dict[str, Component]) -> None:
@@ -295,9 +299,35 @@ class PyInterfacer:
         if c1 in cls.COMPONENTS and c2 in cls.COMPONENTS:
             # binding is done at interface level
             i = cls.get_interface(cls.COMPONENTS[c1].interface)
-            
+
             if i is not None:
                 i.create_binding(cls.COMPONENTS[c1], a1, cls.COMPONENTS[c2], a2)
+
+    @classmethod
+    def map_actions(cls, actions: Dict[str, Callable]) -> None:
+        """
+        Maps a component to an action callback. Used to define actions for Clickable components.
+
+        :param actions: Actions mapping in the format `{id: callback}`.
+        """
+
+        cls._COMPONENT_ACTION_MAPPING.update(actions)
+        cls._update_actions()
+
+    @classmethod
+    def _update_actions(cls) -> None:
+        """
+        Updates actions for Clickable components using the component action mapping.
+        """
+
+        if len(cls._COMPONENT_ACTION_MAPPING) == 0:
+            return
+
+        for id_ in cls._COMPONENT_ACTION_MAPPING.keys():
+            c = cls.COMPONENTS.get(id_)
+
+            if isinstance(c, Clickable):
+                c.action = cls._COMPONENT_ACTION_MAPPING[id_]
 
 
 class DefaultComponentTypes(Enum):

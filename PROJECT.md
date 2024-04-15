@@ -204,6 +204,9 @@ class PyInterfacer:
     _COMPONENT_CONVERSION_TABLE: Dict[str, Component] # maps a type (key) to a component class (value). Used to handle conversion from YAML atributes to component instances
     _GROUP_CONVERSION_TABLE: Dict[str, ComponentGroup] # Maps a component type (key) to a component group. Used to handle the creation of specific groups for some component types
 
+    # Maps a component id (key) to an action callback (value). Used to map actions easily for Clickable components
+    _COMPONENT_ACTION_MAPPING: Dict[str, Callable] = {}
+
     # Configures the display to render to (by default, pygame.display.get_surface())
     def set_display(display: pygame.Surface) -> None
 
@@ -242,6 +245,11 @@ class PyInterfacer:
     def emit_input(cls, event)
     # Handles hover events for all of the Hoverable components in the currently focused interface.
     def handle_hover(cls) -> None
+
+    # Binds a component's attribute to another component's attribute
+    def bind(cls, c1: str, a1: str, c2: str, a2: str) -> None
+    # Maps actions to components, using their id
+    def map_actions(cls, actions: Dict[str, Callable]) -> None
 
 # This class handles a single interface
 class Interface:
@@ -284,6 +292,9 @@ class Interface:
 
     # Adds a subgroup to the interface. Subgroups are updated alongside the interface group, and rendered into the interface surface.
     def add_subgroup(self, group: pygame.sprite.Group) -> None
+
+    # Binds a component's attribute to another component's attribute.
+    def create_binding(self, c1: Component, a1: str, c2: Component, a2: str) -> None
 ```
 
 # Interface handling (First Proposal)
