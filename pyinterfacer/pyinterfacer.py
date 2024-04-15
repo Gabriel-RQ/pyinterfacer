@@ -8,7 +8,7 @@ import yaml
 import os
 import re
 
-from typing import Optional, Dict, Callable
+from typing import Optional, Dict, Callable, Union, overload
 from enum import Enum
 from .interface import Interface
 from .groups import *
@@ -282,6 +282,7 @@ class PyInterfacer:
         if cls._current_focus is not None:
             cls._current_focus.handle_hover()
 
+    @overload
     @classmethod
     def bind(cls, c1: str, a1: str, c2: str, a2: str) -> None:
         """
@@ -293,12 +294,39 @@ class PyInterfacer:
         :param a2: Attribute of the component to bind to.
         """
 
-        if c1 in cls.COMPONENTS and c2 in cls.COMPONENTS:
-            # binding is done at interface level
-            i = cls.get_interface(cls.COMPONENTS[c1].interface)
+        ...
 
-            if i is not None:
-                i.create_binding(cls.COMPONENTS[c1], a1, cls.COMPONENTS[c2], a2)
+    @overload
+    @classmethod
+    def bind(cls, c1: str, a1: str, callback: Callable) -> None:
+        """
+        Binds a component attribute to a callback. The callback will receive the attribute value, and should return it's updated value.
+
+        :param c1: ID of the component to bind.
+        :param a1: Attribute of the component to bind.
+        :param callback: Callback function that returns the value for the attribute.
+        """
+
+        ...
+
+    @classmethod
+    def bind(
+        cls, c1: str, a1: str, c2: Union[str, Callable], a2: Optional[str] = None
+    ) -> None:
+        if isinstance(c2, str) and a2 is not None:
+            if c1 in cls.COMPONENTS and c2 in cls.COMPONENTS:
+                # binding is done at interface level
+                i = cls.get_interface(cls.COMPONENTS[c1].interface)
+
+                if i is not None:
+                    i.create_binding(cls.COMPONENTS[c1], a1, cls.COMPONENTS[c2], a2)
+        elif callable(c2):
+
+            if c1 in cls.COMPONENTS:
+                i = cls.get_interface(cls.COMPONENTS[c1].interface)
+
+                if i is not None:
+                    i.create_binding(cls.COMPONENTS[c1], a1, c2)
 
     @classmethod
     def map_actions(cls, actions: Dict[str, Callable]) -> None:

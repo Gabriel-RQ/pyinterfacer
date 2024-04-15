@@ -9,7 +9,7 @@ import os
 from ..components import Component
 from ..groups import ComponentGroup, ClickableGroup, HoverableGroup, InputGroup
 from ..util import percent_to_float
-from typing import List, Dict, Literal, Optional, Tuple
+from typing import List, Dict, Literal, Optional, Tuple, Callable, Union, overload
 
 
 class Interface:
@@ -45,7 +45,9 @@ class Interface:
 
         self._components: List[Component] = []
         self._style_classes = styles
-        self._bindings = [] # A list of binding dictionaries that will be used to bind components to each other. Called when updating the interface The dictionary should have the following structure: {"from": (component1, attribute1), "to": (component2, attribute2)}
+        self._bindings: List[_ComponentBinding] = (
+            []
+        )  # A list of bindings used to bind components to each other. Called when updating the interface.
 
         self._parse_background(background)
         self._parse_components(components)
@@ -204,7 +206,7 @@ class Interface:
 
             if len(component["style"]) == 0:
                 return
-            
+
             # Handles multiple style classes
             for style in component["style"]:
                 if style in self._style_classes:
@@ -213,7 +215,7 @@ class Interface:
                         # Because of the way this is handled, the order in which the style classes are declared matters. The first style class will have the highest priority, and will not be overwritten by the following ones
                         if attr not in component:
                             component[attr] = value
-                 
+
     def _handle_new_type_group(self, component: Component) -> None:
         """
         Creates new component groups for component types that don't have a group yet.
@@ -252,12 +254,7 @@ class Interface:
         # Update bindings
         if len(self._bindings) > 0:
             for binding in self._bindings:
-                c1, a1 = binding["from"]
-                c2, a2 = binding["to"]
-
-                # the binding must convert the value to the type of the attribute it's binding to
-                a2_type = type(getattr(c2, a2))
-                setattr(c2, a2, a2_type(getattr(c1, a1)))
+                binding.handle()
 
     def draw(self, surface: pygame.Surface) -> None:
         """
@@ -337,6 +334,7 @@ class Interface:
         if group not in self._subgroups:
             self._subgroups.append(group)
 
+    @overload
     def create_binding(self, c1: Component, a1: str, c2: Component, a2: str) -> None:
         """
         Creates a binding between two components. When the first component's attribute changes, the second component's attribute will be updated to match it.
@@ -347,4 +345,94 @@ class Interface:
         :param a2: Attribute of component 2.
         """
 
-        self._bindings.append({"from": (c1, a1), "to": (c2, a2)})
+        ...
+
+    @overload
+    def create_binding(self, c1: Component, a1: str, callback: Callable) -> None:
+        """
+        Creates a binding between a component and a callback. The component's attribute will be constantly updated to match the callback return value.
+
+        :param c1: Component to bind.
+        :param a1: Attribute of the component.
+        :param callback: Callback function that return the attribute updated value.
+        """
+
+        ...
+
+    def create_binding(
+        self,
+        c1: Component,
+        a1: str,
+        c2: Union[Component, Callable],
+        a2: Optional[str] = None,
+    ) -> None:
+        if isinstance(c2, Component) and a2 is not None:
+            b = _ComponentBinding("component")
+            b.set_component_binding((c1, a1), (c2, a2))
+            self._bindings.append(b)
+        elif callable(c2):
+            b = _ComponentBinding("callback")
+            b.set_callback_binding((c1, a1), c2)
+
+            self._bindings.append(b)
+
+
+class _ComponentBinding:
+    def __init__(self, type_: Literal["component", "callback"]) -> None:
+        self._type = type_
+        self._callback: Callable = None
+
+        self._from_component: Component = None
+        self._to_component: Component = None
+        self._from_attr: str = None
+        self._to_attr: str = None
+
+    def set_component_binding(
+        self, from_: Tuple[Component, str], to: Tuple[Component, str]
+    ) -> None:
+        """
+        Sets the configuration for a component to component binding.
+
+        :param from_: Tuple where the first index is the Component instance and the second index the component's attribute.
+        :param to: Tuple where the first index is the Component instance  and the second index the component's attribute to bind to.
+        """
+
+        self._from_component = from_[0]
+        self._from_attr = from_[1]
+        self._to_component = to[0]
+        self._to_attr = to[1]
+
+    def set_callback_binding(
+        self, from_: Tuple[Component, str], callback: Callable
+    ) -> None:
+        """
+        Sets a configuration for a component to callback binding.
+
+        :param from_: Tuple where the first index is the Component instance and the second index the component's attribute.
+        :parma callback: Callback to bind the attribute to.
+        """
+
+        self._to_component = from_[0]
+        self._to_attr = from_[1]
+        self._callback = callback
+
+    def handle(self) -> None:
+        """
+        Handles the binding operation. Commonly called at the `Interface.update`.
+        """
+
+        if self._type == "component":
+            # the binding must convert the value to the type of the attribute it's binding to
+            to_type = type(getattr(self._to_component, self._to_attr))
+            setattr(
+                self._to_component,
+                self._to_attr,
+                to_type(getattr(self._from_component, self._from_attr)),
+            )
+        elif self._type == "callback":
+            # it will set the attribute value to it's updated version, returned by the callback
+            setattr(
+                self._to_component,
+                self._to_attr,
+                self._callback(getattr(self._to_component, self._to_attr)),
+            )
