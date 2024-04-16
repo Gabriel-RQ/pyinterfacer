@@ -18,6 +18,18 @@ from .interface import Interface
 from .groups import *
 from .components import *
 
+"""
+PROPOSAL: Create an overlay surface to render elements in every interface and allow for transitions between interfaces (global overlay).
+
+PROPOSAL: Create per interface overlay surfaces, allowing other surfaces to be rendered in each interface, instead of just components.
+
+PROPOSAL: Add a method to handle the transition between interfaces, allowing for custom transitions.
+
+PROPOSAL: Consider delta time for animations and transitions (?).
+
+PROPOSAL: Add keybindings for actions, making it easier to define callbacks for certain keypresses.
+"""
+
 
 class PyInterfacer:
     """PyInterfacer interface manager."""

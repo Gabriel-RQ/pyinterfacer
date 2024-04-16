@@ -241,6 +241,7 @@ Component:
   height: int?
   grid_cell: int?
   style: str?
+  alignment: "center" | "topleft" | "topright" | "midleft" | "midright" | "bottomleft" | "bottomright" # defaults to 'center', controls where (x, y) will be on the component's rect
 
 Text:
   id: str
@@ -259,6 +260,7 @@ Text:
   bold: bool?
   italic: bool?
   antialias: bool?
+  alignment: "center" | "topleft" | "topright" | "midleft" | "midright" | "bottomleft" | "bottomright"
 
 Clickable:
   id: str
@@ -272,6 +274,7 @@ Clickable:
   style: str?
   action: Callable? # this should not be set at the YAML declaration
   enabled: bool?
+  alignment: "center" | "topleft" | "topright" | "midleft" | "midright" | "bottomleft" | "bottomright"
 
 Hoverable:
   id: str
@@ -283,6 +286,7 @@ Hoverable:
   height: int?
   grid_cell: int?
   style: str?
+  alignment: "center" | "topleft" | "topright" | "midleft" | "midright" | "bottomleft" | "bottomright"
 
 Button:
   id: str
@@ -303,6 +307,7 @@ Button:
   antialias: bool?
   action: Callable? # this should not be set at the YAML declaration
   enabled: bool?
+  alignment: "center" | "topleft" | "topright" | "midleft" | "midright" | "bottomleft" | "bottomright"
 
 TextButton:
   id: str
@@ -324,6 +329,7 @@ TextButton:
   action: Callable? # this should not be set at the YAML declaration
   enabled: bool?
   focus_color: str?
+  alignment: "center" | "topleft" | "topright" | "midleft" | "midright" | "bottomleft" | "bottomright"
 
 Input:
   id: str
@@ -349,6 +355,7 @@ Input:
   border_radius: int?
   max_length: int?
   hint: str?
+  alignment: "center" | "topleft" | "topright" | "midleft" | "midright" | "bottomleft" | "bottomright"
 
 Image:
   id: str
@@ -361,6 +368,7 @@ Image:
   grid_cell: int?
   style: str?
   path: str
+  alignment: "center" | "topleft" | "topright" | "midleft" | "midright" | "bottomleft" | "bottomright"
 
 Animation:
   id: str
@@ -375,6 +383,7 @@ Animation:
   delay: int
   images: Tuple[str] # paths to each sprite
   colorkey: str?
+  alignment: "center" | "topleft" | "topright" | "midleft" | "midright" | "bottomleft" | "bottomright"
 
 SpritesheetAnimation:
   id: str
@@ -392,6 +401,7 @@ SpritesheetAnimation:
   spritesheet: str
   sprite_width: int,
   sprite_height: int
+  alignment: "center" | "topleft" | "topright" | "midleft" | "midright" | "bottomleft" | "bottomright"
 ```
 
 ## Bindings

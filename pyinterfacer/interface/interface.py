@@ -45,7 +45,9 @@ class Interface:
 
         self._components: List[Component] = []
         self._style_classes = styles
-        self._bindings = [] # A list of binding dictionaries that will be used to bind components to each other. Called when updating the interface The dictionary should have the following structure: {"from": (component1, attribute1), "to": (component2, attribute2)}
+        self._bindings = (
+            []
+        )  # A list of binding dictionaries that will be used to bind components to each other. Called when updating the interface The dictionary should have the following structure: {"from": (component1, attribute1), "to": (component2, attribute2)}
 
         self._parse_background(background)
         self._parse_components(components)
@@ -204,7 +206,7 @@ class Interface:
 
             if len(component["style"]) == 0:
                 return
-            
+
             # Handles multiple style classes
             for style in component["style"]:
                 if style in self._style_classes:
@@ -213,7 +215,7 @@ class Interface:
                         # Because of the way this is handled, the order in which the style classes are declared matters. The first style class will have the highest priority, and will not be overwritten by the following ones
                         if attr not in component:
                             component[attr] = value
-                 
+
     def _handle_new_type_group(self, component: Component) -> None:
         """
         Creates new component groups for component types that don't have a group yet.
@@ -325,7 +327,7 @@ class Interface:
         :returns: Components dictionary.
         """
 
-        return {c.id: c for c in self._components}
+        return {c.id: c for c in self._components if c.id != "_"}
 
     def add_subgroup(self, group: pygame.sprite.Group) -> None:
         """
