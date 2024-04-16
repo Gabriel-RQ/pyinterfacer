@@ -3,29 +3,27 @@
 @description: PyInterfacer class. This is the main class of the library, and it manages all the loaded interfaces.
 """
 
-"""
-PROPOSAL: Make PyInterfacer save a pickle serialized file of itself when interfaces are loaded, check if this file exists before loading, and deserialize it if it does. Should be even faster than parsing every interface each time the program is executed.
-"""
-
 import pygame
 import yaml
 import os
 import re
 
-from typing import Optional, Dict, Callable
+from typing import Optional, Dict, Callable, Union, overload
 from enum import Enum
 from .interface import Interface
 from .groups import *
 from .components import *
 
 """
-PROPOSAL: Create an overlay surface to render elements in every interface and allow for transitions between interfaces (global overlay).
-
-PROPOSAL: Create per interface overlay surfaces, allowing other surfaces to be rendered in each interface, instead of just components.
+PROPOSAL: Create an overlay surface to render elements in every interface and allow for transitions between interfaces.
 
 PROPOSAL: Add a method to handle the transition between interfaces, allowing for custom transitions.
 
+PROPOSAL: Add a list of "render objects" to each interface, allowing for custom rendering of elements that are not explicitly components.
+
 PROPOSAL: Consider delta time for animations and transitions (?).
+
+PROPOSAL: Ignore components with id equals '_' (?) (as a way to create components that will never be accessed by id without caring to setting any id).
 
 PROPOSAL: Add keybindings for actions, making it easier to define callbacks for certain keypresses.
 """
@@ -51,6 +49,7 @@ class PyInterfacer:
         "hoverable": Hoverable,
         "image": Image,
         "input": Input,
+        "paragraph": Paragraph,
         "spritesheet-animation": SpritesheetAnimation,
         "text-button": TextButton,
         "text": Text,
@@ -297,6 +296,7 @@ class PyInterfacer:
         if cls._current_focus is not None:
             cls._current_focus.handle_hover()
 
+    @overload
     @classmethod
     def bind(cls, c1: str, a1: str, c2: str, a2: str) -> None:
         """
@@ -308,12 +308,39 @@ class PyInterfacer:
         :param a2: Attribute of the component to bind to.
         """
 
-        if c1 in cls.COMPONENTS and c2 in cls.COMPONENTS:
-            # binding is done at interface level
-            i = cls.get_interface(cls.COMPONENTS[c1].interface)
+        ...
 
-            if i is not None:
-                i.create_binding(cls.COMPONENTS[c1], a1, cls.COMPONENTS[c2], a2)
+    @overload
+    @classmethod
+    def bind(cls, c1: str, a1: str, callback: Callable) -> None:
+        """
+        Binds a component attribute to a callback. The callback will receive the attribute value, and should return it's updated value.
+
+        :param c1: ID of the component to bind.
+        :param a1: Attribute of the component to bind.
+        :param callback: Callback function that returns the value for the attribute.
+        """
+
+        ...
+
+    @classmethod
+    def bind(
+        cls, c1: str, a1: str, c2: Union[str, Callable], a2: Optional[str] = None
+    ) -> None:
+        if isinstance(c2, str) and a2 is not None:
+            if c1 in cls.COMPONENTS and c2 in cls.COMPONENTS:
+                # binding is done at interface level
+                i = cls.get_interface(cls.COMPONENTS[c1].interface)
+
+                if i is not None:
+                    i.create_binding(cls.COMPONENTS[c1], a1, cls.COMPONENTS[c2], a2)
+        elif callable(c2):
+
+            if c1 in cls.COMPONENTS:
+                i = cls.get_interface(cls.COMPONENTS[c1].interface)
+
+                if i is not None:
+                    i.create_binding(cls.COMPONENTS[c1], a1, c2)
 
     @classmethod
     def map_actions(cls, actions: Dict[str, Callable]) -> None:
@@ -352,6 +379,7 @@ class DefaultComponentTypes(Enum):
     HOVERABLE = "hoverable"
     IMAGE = "image"
     INPUT = "input"
+    PARAGRAPH = "paragraph"
     SPRITESHEET_ANIMATION = "spritesheet-animation"
     TEXT_BUTTON = "text-button"
     TEXT = "text"

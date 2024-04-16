@@ -262,6 +262,26 @@ Text:
   antialias: bool?
   alignment: "center" | "topleft" | "topright" | "midleft" | "midright" | "bottomleft" | "bottomright"
 
+Paragraph:
+  id: str
+  type: str
+  interface: str
+  x: int
+  y: int
+  width: int?
+  height: int?
+  grid_cell: int?
+  style: str?
+  text: str # this attribute will not be used by the paragraph component
+  font: str?
+  font_size: int?
+  font_color: str?
+  bold: bool?
+  italic: bool?
+  antialias: bool?
+  lines: List[str] # each string on the list will be rendered in a line
+  line_height: int?
+
 Clickable:
   id: str
   type: str
@@ -406,7 +426,7 @@ SpritesheetAnimation:
 
 ## Bindings
 
-Some times you may need some component's attribute value to be the same as another component's attribute value, and the changes in the first component's attribute value to be reflected in the second component's attribute value. For example: we have a Player component, with an `hp` attribute, and Text component, with it's `text` attribute; we want the Text component to display the player's current HP, dynamically; instead of manually updating the Text component `text` value to be the same as the Player`s component `hp` value, we can bind them both, and let PyInterfacer take care of that.
+Some times you may need some component's attribute value to be the same as another component's attribute value, and the changes in the first component's attribute value to be reflected in the second component's attribute value. For example: we have a Player component, with an `hp` attribute, and Text component, with it's `text` attribute; we want the Text component to display the player's current HP, dynamically; instead of manually updating the Text component `text` value to be the same as the Player's component `hp` value, we can bind them both, and let PyInterfacer take care of that.
 
 Here's our example in code:
 
@@ -423,6 +443,27 @@ PyInterfacer.load("interface.yaml")
 # Consider 'interface.yaml' to have components with id 'player' and 'player-hp-txt'
 # We them bind the 'player' component 'hp' attribute value to the 'player-hp-txt' component 'text' attribute value. Now any changes on the player 'hp' value will be updated in the player hp text as well.
 PyInterfacer.bind("player", "hp", "player-hp-txt", "text")
+
+<handle game loop>
+```
+
+You can also bind a component's attribute value to a callback, instead of another component. The callback will receive the attribute's value, and should return it's updated value. For example:
+
+```py
+import pygame
+from pyinterfacer import PyInterfacer
+
+pygame.init()
+
+display = pygame.display.set_mode(size, flags, depth)
+clock = pygame.time.Clock()
+
+PyInterfacer.load("interface.yaml")
+
+def bind_fps(v):
+  return f"FPS: {int(clock.get_fps())}
+
+PyInterfacer.bind("fps-txt", "text", bind_fps)
 
 <handle game loop>
 ```
@@ -522,208 +563,6 @@ while running:
 
   pygame.display.flip()
   clock.tick(FPS)
-
-pygame.quit()
-```
-
-And, below, a more complete example of a counter application:
-
-YAML interface files:
-
-```yaml
-interface: menu
-background: "#1c1c1c"
-display: grid
-rows: 4
-columns: 3
-styles:
-  - name: font-style
-    font: arial
-    font_color: "#c1c1c1"
-    font_size: 32
-components:
-  - type: text
-    id: fps-text
-    style: font-style
-    text: ""
-    font_size: 18
-    x: 50
-    y: 25
-
-  - type: text-button
-    id: exit-btn
-    style: font-style
-    text: Exit
-    focus_color: "#8a74b8"
-    x: 90%
-    y: 50
-
-  - type: text
-    id: menu-title
-    style: font-style
-    text: Supper Dupper Counter
-    font_size: 64
-    bold: true
-    grid_cell: 4
-
-  - type: button
-    id: start-btn
-    style: font-style
-    text: Start
-    bg_color: "#3d3d3d"
-    bg_focus_color: "#4e4e4e"
-    border_radius: 25
-    grid_cell: 7
-```
-
-```yaml
-interface: main
-background: "#1c1c1c"
-display: grid
-rows: 4
-columns: 4
-styles:
-  - name: font-style
-    font: arial
-    font_color: "#c1c1c1"
-    font_size: 32
-components:
-  - type: text-button
-    id: menu-btn
-    style: font-style
-    text: Menu
-    focus_color: "#8a74b8"
-    x: 90%
-    y: 50
-
-  - type: text
-    id: counter-text
-    style: font-style
-    text: "0"
-    font_size: 512
-    bold: true
-    x: 50%
-    y: 50%
-
-  - type: text-button
-    id: subt-btn
-    style: font-style
-    text: "-"
-    font_size: 128
-    focus_color: "#8a74b8"
-    grid_cell: 13
-
-  - type: text-button
-    id: add-btn
-    style: font-style
-    text: "+"
-    font_size: 128
-    focus_color: "#8a74b8"
-    grid_cell: 14
-```
-
-```yaml
-interface: exit
-background: "#1c1c1c"
-display: default
-styles:
-  - name: font-style
-    font: arial
-    font_color: "#c1c1c1"
-    font_size: 32
-components:
-  - type: text
-    id: exit-text
-    style: font-style
-    text: Do you want to exit?
-    font_size: 76
-    bold: true
-    x: 50%
-    y: 45%
-
-  - type: text-button
-    id: no-btn
-    style: font-style
-    text: "No"
-    focus_color: "#8a74b8"
-    x: 40%
-    y: 65%
-
-  - type: text-button
-    id: yes-btn
-    style: font-style
-    text: "Yes"
-    focus_color: "#8a74b8"
-    x: 60%
-    y: 65%
-```
-
-Code:
-
-```py
-import pygame
-from pyinterfacer import PyInterfacer
-
-import pygame
-
-pygame.init()
-
-display = pygame.display.set_mode((800, 600), pygame.SCALED | pygame.NOFRAME, 32)
-clock = pygame.time.Clock()
-FPS = 120
-
-PyInterfacer.load_all("interfaces/")
-PyInterfacer.change_focus("menu")
-
-counter = 0
-
-def add():
-    global counter
-    counter += 1
-
-def subtract():
-    global counter
-
-    if counter == 0:
-        return
-
-    counter -= 1
-
-fps_txt = PyInterfacer.get_by_id("fps-text")
-counter_txt = PyInterfacer.get_by_id("counter-text")
-
-PyInterfacer.get_by_id("exit-btn").action = exit
-PyInterfacer.get_by_id("start-btn").action = lambda: PyInterfacer.change_focus("main")
-PyInterfacer.get_by_id("menu-btn").action = lambda: PyInterfacer.change_focus("menu")
-PyInterfacer.get_by_id("add-btn").action = add
-PyInterfacer.get_by_id("subt-btn").action = subtract
-PyInterfacer.get_by_id("no-btn").action = lambda: PyInterfacer.change_focus("menu")
-PyInterfacer.get_by_id("yes-btn").action = exit
-
-running = True
-while running:
-
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                PyInterfacer.change_focus("exit")
-            elif event.key in (pygame.K_KP_PLUS, pygame.K_PLUS):
-                add()
-            elif event.key in (pygame.K_KP_MINUS, pygame.K_MINUS):
-                subtract()
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            if event.button == 1:
-                PyInterfacer.emit_click()
-
-    fps_txt.text = f"FPS: {clock.get_fps():.0f}"
-    counter_txt.text = str(counter)
-
-    PyInterfacer.handle()
-
-    pygame.display.flip()
-    clock.tick(FPS)
 
 pygame.quit()
 ```

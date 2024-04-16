@@ -1,0 +1,44 @@
+interface: menu
+background: "#1c1c1c"
+display: default
+styles:
+  - name: font-style
+    font: arial
+    font_color: "#c1c1c1"
+    font_size: 32
+components:
+  - type: text
+    id: _
+    style: font-style
+    text: Counter
+    font_size: 128
+    x: 50%
+    y: 40%
+
+  - type: button
+    id: start-counter-btn
+    style: font-style
+    text: Start Counter
+    x: 50%
+    y: 65%
+    width: 250
+    height: 75
+    bg_color: "#2c2c2c"
+    bg_focus_color: "#3c3c3c"
+    border_radius: 35
+
+  - type: text-button
+    id: exit-btn
+    style: font-style
+    text: Exit
+    x: 93%
+    y: 35
+    focus_color: "#b995cf"
+
+  - type: text-button
+    id: fullscreen-btn
+    style: font-style
+    text: Fullscreen
+    x: 13%
+    y: 35
+    focus_color: "#b995cf"

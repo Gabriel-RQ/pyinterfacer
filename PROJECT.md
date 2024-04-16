@@ -78,6 +78,12 @@ class Text(Component):
     antialias: bool? = True,
 
 
+# Display multiple lines of text
+class Paragraph(Text):
+    lines: List[str], # list of texts that compose each line of the paragraph
+    line_height: int?
+
+
 # Clickable components should all inherit from this class.
 class Clickable(Component):
     action: Callable?,
@@ -134,6 +140,7 @@ class SpritesheetAnimation(Animation):
     spritesheet: str,
     sprite_width: int,
     sprite_height: int
+
 ```
 
 The `Component` class also defines a `subtype` atribute as None by default. This atribute should be set by custom components, to indicate which of the default component set types the custom component belongs to. The `subtype` is used for group handling at parsing.
@@ -247,7 +254,13 @@ class PyInterfacer:
     def handle_hover(cls) -> None
 
     # Binds a component's attribute to another component's attribute
+    @overload
     def bind(cls, c1: str, a1: str, c2: str, a2: str) -> None
+
+    # Binds a component's attribute to a callback return value (the callback receives the attribute value as a parameter).
+    @overload
+    def bind(cls, c1: str, a1: str, callback: Callable) -> None
+
     # Maps actions to components, using their id
     def map_actions(cls, actions: Dict[str, Callable]) -> None
 
@@ -268,7 +281,7 @@ class Interface:
     _type_groups: Dict[str, ComponentGroup] # Groups components (values) by type (keys)
     _components: List[Component]
     _style_classes: Dict[str, Dict] # Maps a style class (key) to it's information (value)
-    _bindings: List[Dict] # List of component bindings in the format {"from": (component1, attribute1), "to": (component2, attribute2)}
+    _bindings: List[_ComponentBinding]
 
     # Updates the interface
     def update() -> None
@@ -294,7 +307,12 @@ class Interface:
     def add_subgroup(self, group: pygame.sprite.Group) -> None
 
     # Binds a component's attribute to another component's attribute.
+    @overload
     def create_binding(self, c1: Component, a1: str, c2: Component, a2: str) -> None
+
+    # Binds a component's attribute to a callback
+    @overload
+    def create_binding(self, c1: Component, a1: str, callback: Callable) -> None
 ```
 
 # Interface handling (First Proposal)
