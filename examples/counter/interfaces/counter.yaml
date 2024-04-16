@@ -1,0 +1,40 @@
+interface: counter
+background: "#1c1c1c"
+display: default
+styles:
+  - name: font-style
+    font: arial
+    font_color: "#c1c1c1"
+    font_size: 32
+  - name: btn-style
+    focus_color: "#b995cf"
+    y: 90%
+    font_size: 86
+components:
+  - type: text
+    id: counter-txt
+    style: font-style
+    font_size: 512
+    bold: true
+    text: "0"
+    x: 50%
+    y: 50%
+
+  - type: text-button
+    id: add-btn
+    style: [btn-style, font-style]
+    text: "+"
+    x: 60%
+
+  - type: text-button
+    id: subtract-btn
+    style: [btn-style, font-style]
+    text: "-"
+    x: 40%
+
+  - type: text-button
+    id: goto-menu-btn
+    style: [font-style, btn-style]
+    text: "Menu"
+    x: 93%
+    y: 35
