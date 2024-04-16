@@ -232,7 +232,7 @@ Below is a list of the components avaiable in the default component set, and the
 
 ```py
 Component:
-  id: str
+  id: str # components with id equals to '_' are handled, but not added to the global component mapping.
   type: str
   interface: str
   x: int

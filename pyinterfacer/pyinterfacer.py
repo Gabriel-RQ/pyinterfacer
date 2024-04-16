@@ -15,15 +15,13 @@ from .groups import *
 from .components import *
 
 """
-PROPOSAL: Create an overlay surface to render elements in every interface and allow for transitions between interfaces.
+PROPOSAL: Create an global overlay surface to render elements in every interface and allow for transitions between interfaces.
 
-PROPOSAL: Add a method to handle the transition between interfaces, allowing for custom transitions.
+PROPOSAL: Add an overlay surface to each interface, allowing anything to be rendered, not only components.
 
 PROPOSAL: Add a list of "render objects" to each interface, allowing for custom rendering of elements that are not explicitly components.
 
 PROPOSAL: Consider delta time for animations and transitions (?).
-
-PROPOSAL: Ignore components with id equals '_' (?) (as a way to create components that will never be accessed by id without caring to setting any id).
 
 PROPOSAL: Add keybindings for actions, making it easier to define callbacks for certain keypresses.
 """
