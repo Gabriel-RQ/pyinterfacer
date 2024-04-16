@@ -226,6 +226,22 @@ By doing that, our `txt-1` and `txt-2` Text components will use the font informa
 
 Each component can define a single style class, or a list of style classes. If a list is provided, the first style class on the list will have the highest priority.
 
+# Overlays
+
+May you need to render anything other than components at the display, PyInterfacer allows to do so through overlays. PyInterfacer have a global overlay, allowing you to render anything above every interface. All you need to do is to add render targets to the overlay:
+
+```py
+PyInterfacer.add_to_overlay(surface, destination) # to add a single Surface
+PyInterfacer.add_to_overlay(((surface, destination), ...)) # to add multiple Surfaces
+```
+
+You can also clear the overlay, and restore the last overlay render targets, it needed:
+
+```py
+PyInterfacer.clear_overlay()
+PyInterfacer.restore_overlay()
+```
+
 # Components and attributes
 
 Below is a list of the components avaiable in the default component set, and the attributes they can accept:

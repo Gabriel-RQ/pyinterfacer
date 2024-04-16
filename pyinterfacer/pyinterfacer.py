@@ -8,20 +8,18 @@ import yaml
 import os
 import re
 
-from typing import Optional, Dict, Callable, Union, overload
+from typing import Optional, Dict, Callable, Union, Tuple, overload
 from enum import Enum
 from .interface import Interface
 from .groups import *
 from .components import *
+from .util import OverlayManager
+
 
 """
-PROPOSAL: Create an global overlay surface to render elements in every interface and allow for transitions between interfaces.
+PROPOSAL: Add display type 'overlay' to interfaces. Interfaces with this display type would be rendered into the overlay, effectively being always rendered.
 
 PROPOSAL: Add an overlay surface to each interface, allowing anything to be rendered, not only components.
-
-PROPOSAL: Add a list of "render objects" to each interface, allowing for custom rendering of elements that are not explicitly components.
-
-PROPOSAL: Consider delta time for animations and transitions (?).
 
 PROPOSAL: Add keybindings for actions, making it easier to define callbacks for certain keypresses.
 """
@@ -31,6 +29,7 @@ class PyInterfacer:
     """PyInterfacer interface manager."""
 
     _display: pygame.Surface = None
+    _overlay = OverlayManager()
     _current_focus: Optional[Interface] = None
 
     # Stores all the interfaces. Each key represents an interface name.
@@ -71,7 +70,11 @@ class PyInterfacer:
 
         :param display: Pygame Surface.
         """
+
         cls._display = display
+        cls._overlay.set_overlay(
+            pygame.Surface((cls._display.get_size()), pygame.SRCALPHA).convert_alpha()
+        )
 
     @classmethod
     def load_all(cls, path: str) -> None:
@@ -148,7 +151,9 @@ class PyInterfacer:
         # Checks if a display has been set, if not, fallback to the display initialized from pygame.display.set_mode
         if cls._display is None:
             if pygame.display.get_active():
-                cls._display = pygame.display.get_surface()
+                cls.set_display(pygame.display.get_surface())
+            else:
+                raise UndefinedDisplaySurfaceException()
 
         # Checks if any component style class has been defined for the interface
         if "styles" in interface_dict and len(interface_dict["styles"]) > 0:
@@ -221,6 +226,61 @@ class PyInterfacer:
 
         if cls._current_focus is not None:
             cls._current_focus.draw(cls._display)
+
+        if (o := cls._overlay.render()) is not None:
+            cls._display.blit(o, (0, 0))
+
+    @overload
+    @classmethod
+    def add_to_overlay(
+        cls, source: pygame.Surface, dest: pygame.Rect | Tuple[int, int]
+    ) -> None:
+        """
+        Renders a surface to the overlay using `pygame.Surface.blit`.
+
+        :param source: A pygame Surface.
+        :param dest: A pygame Rect or a Coordinate (x, y).
+        """
+
+        ...
+
+    @overload
+    @classmethod
+    def add_to_overlay(cls, blit_sequence: Tuple[Tuple, ...]) -> None:
+        """
+        Renders many images to the overlay using `pygame.Surface.blits`.
+
+        :param blit_sequence: A tuple in the format (source, dest, area?, special_flags?).
+        """
+
+        ...
+
+    @classmethod
+    def add_to_overlay(
+        cls,
+        p1: Tuple | pygame.Surface,
+        p2: Optional[pygame.Rect | Tuple[int, int]] = None,
+    ) -> None:
+        # if drawing many images
+        if isinstance(p1, tuple) and p2 is None:
+            cls._overlay.add_many_targets(p1)
+        elif isinstance(p1, pygame.Surface) and p2 is not None:
+            cls._overlay.add_single_target(p1, p2)
+
+    @classmethod
+    def clear_overlay(cls) -> None:
+        """
+        Clears the overlay surface.
+        """
+
+        if cls._overlay is not None:
+            cls._overlay.clear()
+
+    @classmethod
+    def restore_overlay(cls) -> None:
+        """Restores the last rendered surfaces to the overlay."""
+
+        cls._overlay.restore()
 
     @classmethod
     def handle(cls) -> None:
@@ -399,4 +459,11 @@ class InvalidDisplayTypeException(Exception):
     def __init__(self, interface: str) -> None:
         super().__init__(
             f"The specified display type for the interface '{interface}' is invalid. It should be either 'default' or 'grid'. Note that grid displays shoud provide 'rows' and 'columns'."
+        )
+
+
+class UndefinedDisplaySurfaceException(Exception):
+    def __init__(self) -> None:
+        super().__init__(
+            "No Surface has been set as a display for PyInterfacer, and pygame.display.set_mode was not called. There's no fallback possible. Either provide a Surface or call pygame.display.set_mode."
         )

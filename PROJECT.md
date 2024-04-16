@@ -203,7 +203,9 @@ This proposal aims to enhance and simplify what's been defined in the first prop
 # This class handles all the interfaces
 class PyInterfacer:
     _display: pygame.Surface # Where to render everything
+    _overlay: OverlayManager # Controls the global overlay surface
     _current_focus: Interface? # Controls the current focused interface
+
 
     INTERFACES: Dict[str, Interface] # Stores all the interfaces, by their name
     COMPONENTS: Dict[str, Component] # Stores all the components, by their id
@@ -256,13 +258,21 @@ class PyInterfacer:
     # Binds a component's attribute to another component's attribute
     @overload
     def bind(cls, c1: str, a1: str, c2: str, a2: str) -> None
-
     # Binds a component's attribute to a callback return value (the callback receives the attribute value as a parameter).
     @overload
     def bind(cls, c1: str, a1: str, callback: Callable) -> None
 
     # Maps actions to components, using their id
     def map_actions(cls, actions: Dict[str, Callable]) -> None
+
+    # Adds a single surface to be rendered into the overlay
+    @overload
+    def add_to_overlay(cls, source: pygame.Surface, dest: pygame.Rect | Tuple[int, int]) -> None
+    # Adds many surfaces to be rendered into the overlay
+    @overload
+    def add_to_overlay(cls, blit_sequence: Tuple) -> None
+    # Clears the overlay surface
+    def clear_overlay(cls) -> None
 
 # This class handles a single interface
 class Interface:
