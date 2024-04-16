@@ -35,6 +35,12 @@ class Input(Text, Hoverable):
         self.hint = hint
 
         self._bg_color_backup = self.bg_color
+        self._fill_color = pygame.Color(self.bg_color)
+        self._fill_color.r = (
+            self._fill_color.r + 1
+            if self._fill_color.r < 255
+            else self._fill_color.r - 1
+        )
 
     def handle_click(self, mouse_pos: Tuple[int, int]) -> None:
         """Checks if this component was clicked, if so, activates it, otherwise inactivate it."""
@@ -57,14 +63,25 @@ class Input(Text, Hoverable):
         elif self.max_length is None or len(self.text) < self.max_length:
             self.text += key_unicode
 
+    def hover_action(self) -> None:
+        if self.bg_focus_color is None:
+            return
+
+        if self._hovered:
+            self.bg_color = self.bg_focus_color
+        else:
+            self.bg_color = self._bg_color_backup
+
     def update(self) -> None:
         self.image = pygame.Surface((self.width, self.height))
-        self.rect = self.image.get_rect(center=(self.x, self.y))
+        self.rect = self.image.get_rect()
+        self._align()
 
         # Checks if there is a background color and if the input should have border radius
         if self.bg_color is not None:
             if self.border_radius is not None:
-                self.image.set_colorkey("black")
+                self.image.fill(self._fill_color)
+                self.image.set_colorkey(self._fill_color)
                 pygame.draw.rect(
                     self.image,
                     self.bg_color,
@@ -95,12 +112,3 @@ class Input(Text, Hoverable):
         self.image.blit(
             txt_surf, (txt_x_pos, (self.rect.height - txt_surf.get_height()) // 2)
         )
-
-    def hover_action(self) -> None:
-        if self.bg_focus_color is None:
-            return
-
-        if self._hovered:
-            self.bg_color = self.bg_focus_color
-        else:
-            self.bg_color = self._bg_color_backup

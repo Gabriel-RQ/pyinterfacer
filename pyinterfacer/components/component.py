@@ -20,6 +20,16 @@ default_component_types = Literal[
     "text",
 ]
 
+alignment_options = Literal[
+    "center",
+    "topleft",
+    "topright",
+    "midleft",
+    "midright",
+    "bottomleft",
+    "bottomright",
+]
+
 
 class Component(pygame.sprite.Sprite):
     """Base component class with atributes common to all components. Every component should inherit from this."""
@@ -35,6 +45,7 @@ class Component(pygame.sprite.Sprite):
         height: Optional[int] = 0,
         grid_cell: Optional[int] = None,
         style: Optional[str | Tuple[str]] = None,
+        alignment: Optional[alignment_options] = None,
         groups: Tuple[pygame.sprite.AbstractGroup, ...] = (),
         *args,
         **kwargs,
@@ -50,6 +61,11 @@ class Component(pygame.sprite.Sprite):
         self.height = height if height is not None else 0
         self.grid_cell = grid_cell
         self.style_classes = tuple(style) if style is not None else None
+        self.alignment = (
+            alignment
+            if alignment is not None and alignment in alignment_options.__args__
+            else "center"
+        )  # Alignment fallback to 'center' if not specified or invalid
 
         self.subtype: Optional[default_component_types] = (
             None  # Should be set by custom components, to indicate which of the default component set type the custom components belong to (used for group handling)
@@ -62,10 +78,17 @@ class Component(pygame.sprite.Sprite):
         """
         pass
 
+    def _align(self) -> None:
+        """
+        Aligns this component rect, positioning the rect correctly at (x, y).
+        """
+
+        setattr(self.rect, self.alignment, (self.x, self.y))
+
     def update(self) -> None:
         self.image = pygame.Surface((self.width, self.height))
-        self.rect = self.image.get_rect(center=(self.x, self.y))
-        self.image.fill("black")
+        self.rect = self.image.get_rect()
+        self._align()
 
     def __repr__(self) -> str:
         return f"<{self.type.capitalize()} component | id: {self.id} ; interface: {self.interface} ; subtype: {self.subtype} ; in ({len(self.groups())}) groups>"

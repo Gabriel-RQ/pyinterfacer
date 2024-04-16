@@ -59,7 +59,8 @@ class Animation(Component):
 
         # Define the image for the current frame
         self.image = self.images[self._current_frame]
-        self.rect = self.image.get_rect(center=(self.x, self.y))
+        self.rect = self.image.get_rect()
+        self._align()
 
         # Handles the delay
         self._delay_counter += 1
