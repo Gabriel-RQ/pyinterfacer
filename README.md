@@ -235,12 +235,28 @@ PyInterfacer.add_to_overlay(surface, destination) # to add a single Surface
 PyInterfacer.add_to_overlay(((surface, destination), ...)) # to add multiple Surfaces
 ```
 
-You can also clear the overlay, and restore the last overlay render targets, it needed:
+You can also clear the overlay, restore the last overlay render targets, and set the overlay opacity, if needed:
 
 ```py
 PyInterfacer.clear_overlay()
 PyInterfacer.restore_overlay()
+PyInterfacer.set_overlay_opacity(integer-from-1-to-255)
 ```
+
+If you want a better control over what is rendered into each interface, you can also add render targets to overlays in each interface:
+
+```
+i = PyInterfacer.get_interface("interface-name")
+if i is not None:
+  i.add_to_layer(surface, destionation, layer=RenderLayer.OVERLAY)
+  i.add_to_layer(((surface, destination), ...), layer=RenderLayer.OVERLAY)
+```
+
+The functions to clear, restore and set opacity to the overlay also apply for per interface overlays.
+
+# Underlayers
+
+Not yet implemented!
 
 # Components and attributes
 
