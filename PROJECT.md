@@ -273,6 +273,12 @@ class PyInterfacer:
     def add_to_overlay(cls, blit_sequence: Tuple) -> None
     # Clears the overlay surface
     def clear_overlay(cls) -> None
+    # Restores the last overlay surface
+    def restore_overlay(cls) -> None
+    # Sets the overlay surface opacity
+    def set_overlay_opacity(cls, o: int) -> None
+    # returns the current overlay opacity
+    def get_overlay_opacity(cls) -> int
 
 # This class handles a single interface
 class Interface:
@@ -319,10 +325,24 @@ class Interface:
     # Binds a component's attribute to another component's attribute.
     @overload
     def create_binding(self, c1: Component, a1: str, c2: Component, a2: str) -> None
-
     # Binds a component's attribute to a callback
     @overload
     def create_binding(self, c1: Component, a1: str, callback: Callable) -> None
+
+    # Adds a single surface to be rendered into the interface's overlay or underlayer
+    @overload
+    def add_to_layer(self, source: pygame.Surface, dest: pygame.Rect | Tuple[int, int], *, layer: RenderLayer) -> None
+    # Renders many surfaces to be rendered into the interface's overlay or underlayer
+    @overload
+    def add_to_layer(self, blit_sequence: Tuple[Tuple, ...], *, layer: RenderLayer) -> None
+    # Clears the interface's overlay or underlayer surface
+    def clear_layer(self, layer: RenderLayer) -> None
+    # Sets the opacity of the interface's overlay or underlayer
+    def set_layer_opacity(self, o: int, layer: RenderLayer) -> None
+    # Returns the opacity of the interface's overlay and underlayer
+    def get_layer_opacity(self, layer: RenderLayer) -> int
+    # Restores the interfac's overlay or underlayer last surface
+    def restore_layer(self, layer: RenderLayer) -> None
 ```
 
 # Interface handling (First Proposal)

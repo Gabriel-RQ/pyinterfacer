@@ -236,7 +236,7 @@ class PyInterfacer:
         cls, source: pygame.Surface, dest: pygame.Rect | Tuple[int, int]
     ) -> None:
         """
-        Renders a surface to the overlay using `pygame.Surface.blit`.
+        Renders a surface to the global overlay using `pygame.Surface.blit`.
 
         :param source: A pygame Surface.
         :param dest: A pygame Rect or a Coordinate (x, y).
@@ -248,9 +248,9 @@ class PyInterfacer:
     @classmethod
     def add_to_overlay(cls, blit_sequence: Tuple[Tuple, ...]) -> None:
         """
-        Renders many images to the overlay using `pygame.Surface.blits`.
+        Renders many images to the global overlay using `pygame.Surface.blits`.
 
-        :param blit_sequence: A tuple in the format (source, dest, area?, special_flags?).
+        :param blit_sequence: Tuples in the format (source, dest, area?, special_flags?).
         """
 
         ...
