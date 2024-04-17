@@ -1,3 +1,8 @@
+"""
+@author: Gabriel RQ
+@description: Overlay manager class.
+"""
+
 import pygame
 
 from typing import Tuple, Optional
@@ -10,6 +15,7 @@ class OverlayManager:
         self._surface: pygame.Surface = None
         self._render_targets = {"single": [], "many": []}
         self._render_targets_backup = None
+        self._opacity = 0  # ranges from 0 to 255
 
     def add_single_target(
         self, s: pygame.Surface, d: pygame.Rect | Tuple[int, int]
@@ -23,7 +29,20 @@ class OverlayManager:
         self._render_targets["many"].extend(s)
 
     def set_overlay(self, surf: pygame.Surface) -> None:
+        """Sets the overlay surface."""
         self._surface = surf
+
+    def set_opacity(self, o: int) -> None:
+        """
+        Sets the opacity of the overlay. The opacity should range from 0 to 255, if a value below or above is provided, the closest value will be picked instead.
+
+        :param o: Integer value from 0 to 255.
+        """
+        self._opacity = max(0, min(o, 255))
+
+    def get_opacity(self) -> int:
+        """Returns the overlay current opacity."""
+        return self._opacity
 
     def clear(self) -> None:
         """Clears the overlay surface."""
@@ -35,9 +54,6 @@ class OverlayManager:
         }
         self._render_targets["single"].clear()
         self._render_targets["many"].clear()
-        self._surface.fill(
-            (0, 0, 0, 0)
-        )  # fills the overlay with a transparent color, to 'clean' it from previous surfaces
 
     def restore(self) -> None:
         """Restores the last render targets to the overlay."""
@@ -52,6 +68,10 @@ class OverlayManager:
 
         if self._surface is None:
             return None
+
+        self._surface.fill(
+            (0, 0, 0, self._opacity)
+        )  # fills the overlay with a transparent color, to 'clean' it from previous surfaces
 
         for t in self._render_targets["single"]:
             self._surface.blit(*t)

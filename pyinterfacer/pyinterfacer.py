@@ -277,6 +277,21 @@ class PyInterfacer:
             cls._overlay.clear()
 
     @classmethod
+    def set_overlay_opacity(cls, o: int) -> None:
+        """
+        Sets the overlay opacity.
+
+        :param o: An integer value ranging from 0 to 255.
+        """
+
+        cls._overlay.set_opacity(o)
+
+    @classmethod
+    def get_overlay_opacity(cls) -> int:
+        """Returns the overlay opacity."""
+        return cls._overlay.get_opacity()
+
+    @classmethod
     def restore_overlay(cls) -> None:
         """Restores the last rendered surfaces to the overlay."""
 
