@@ -8,8 +8,14 @@ import os
 
 from ..components import Component
 from ..groups import ComponentGroup, ClickableGroup, HoverableGroup, InputGroup
-from ..util import percent_to_float
+from ..util import percent_to_float, OverlayManager
 from typing import List, Dict, Literal, Optional, Tuple, Callable, Union, overload
+from enum import Enum, auto
+
+
+class RenderLayer(Enum):
+    OVERLAY = auto()  # render to the overlay layer
+    UNDERLAYER = auto()  # render to the underlayer (under components, after background)
 
 
 class Interface:
@@ -34,6 +40,10 @@ class Interface:
         self.size = size
 
         self.surface = pygame.Surface(self.size).convert()
+        self._overlay = OverlayManager()
+        self._overlay.set_overlay(
+            pygame.Surface((self.size), pygame.SRCALPHA).convert_alpha()
+        )
         self._bg_color = "black"
         self._bg_image: Optional[pygame.Surface] = None
 
@@ -263,7 +273,7 @@ class Interface:
         :param surface: Pygame Surface to render this interface to.
         """
 
-        if self._bg_image:
+        if self._bg_image is not None:
             self.surface.blit(self._bg_image, (0, 0))
         else:
             self.surface.fill(self._bg_color)
@@ -273,6 +283,9 @@ class Interface:
         if len(self._subgroups) > 0:
             for group in self._subgroups:
                 group.draw(self.surface)
+
+        if (o := self._overlay.render()) is not None:
+            self.surface.blit(o, (0, 0))
 
         surface.blit(self.surface, (0, 0))
 
@@ -375,6 +388,90 @@ class Interface:
             b.set_callback_binding((c1, a1), c2)
 
             self._bindings.append(b)
+
+    @overload
+    def add_to_layer(
+        self,
+        source: pygame.Surface,
+        dest: pygame.Rect | Tuple[int, int],
+        *,
+        layer: RenderLayer,
+    ) -> None:
+        """
+        Renders a single surface to the interface overlay or underlayer.
+
+        :param source: Surface to be added to the overlay.
+        :param dest: A Rect or a coordinate (x,y).
+        """
+        ...
+
+    @overload
+    def add_to_layer(
+        self, blit_sequence: Tuple[Tuple, ...], *, layer: RenderLayer
+    ) -> None:
+        """
+        Renders many surfaces to the interface overlay or underlayer.
+
+        :param blit_sequence: Tuples in the format (source, dest, area?, special_flags?).
+        """
+        ...
+
+    def add_to_layer(
+        self,
+        p1: Tuple | pygame.Surface,
+        p2: Optional[pygame.Rect | Tuple[int, int]] = None,
+        *,
+        layer: RenderLayer,
+    ) -> None:
+        # if drawing many images
+        if isinstance(p1, tuple):
+            if layer == RenderLayer.OVERLAY:
+                self._overlay.add_many_targets(p1)
+            elif layer == RenderLayer.UNDERLAYER:
+                raise NotImplementedError()
+        elif isinstance(p1, pygame.Surface) and p2 is not None:
+            if layer == RenderLayer.OVERLAY:
+                self._overlay.add_single_target(p1, p2)
+            elif layer == RenderLayer.UNDERLAYER:
+                raise NotImplementedError()
+
+    def clear_layer(self, layer: RenderLayer) -> None:
+        """
+        Clears the interface's overlay or underlayer surface.
+        """
+
+        if layer == RenderLayer.OVERLAY:
+            self._overlay.clear()
+        elif layer == RenderLayer.UNDERLAYER:
+            raise NotImplementedError()
+
+    def set_layer_opacity(self, o: int, layer: RenderLayer) -> None:
+        """
+        Sets the interface's overlay or underlayer opacity.
+
+        :param o: An integer value ranging from 0 to 255.
+        """
+
+        if layer == RenderLayer.OVERLAY:
+            self._overlay.set_opacity(o)
+        elif layer == RenderLayer.UNDERLAYER:
+            raise NotImplementedError()
+
+    def get_layer_opacity(self, layer: RenderLayer) -> int:
+        """Returns the interface's overlay or underlayer opacity."""
+
+        if layer == RenderLayer.OVERLAY:
+            return self._overlay.get_opacity()
+        elif layer == RenderLayer.UNDERLAYER:
+            raise NotImplementedError()
+
+    def restore_layer(self, layer: RenderLayer) -> None:
+        """Restores the last rendered surfaces to the interface's overlay or underlayer."""
+
+        if layer == RenderLayer.OVERLAY:
+            self._overlay.restore()
+        elif layer == RenderLayer.UNDERLAYER:
+            raise NotImplementedError()
 
 
 class _ComponentBinding:
