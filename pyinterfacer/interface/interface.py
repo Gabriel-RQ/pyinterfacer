@@ -41,9 +41,15 @@ class Interface:
 
         self.surface = pygame.Surface(self.size).convert()
         self._overlay = OverlayManager()
+        self._underlayer = OverlayManager()
+
         self._overlay.set_overlay(
             pygame.Surface((self.size), pygame.SRCALPHA).convert_alpha()
-        )
+        )  # renders above everything
+        self._underlayer.set_overlay(
+            pygame.Surface((self.size), pygame.SRCALPHA).convert_alpha()
+        )  # renders after the background and before components
+
         self._bg_color = "black"
         self._bg_image: Optional[pygame.Surface] = None
 
@@ -273,17 +279,25 @@ class Interface:
         :param surface: Pygame Surface to render this interface to.
         """
 
+        # Renders the background
         if self._bg_image is not None:
             self.surface.blit(self._bg_image, (0, 0))
         else:
             self.surface.fill(self._bg_color)
 
+        # Renders the underlayer
+        if (u := self._underlayer.render()) is not None:
+            self.surface.blit(u, (0, 0))
+
+        # Renders the components
         self._group.draw(self.surface)
 
+        # Renders subgroups
         if len(self._subgroups) > 0:
             for group in self._subgroups:
                 group.draw(self.surface)
 
+        # Renders the overlay
         if (o := self._overlay.render()) is not None:
             self.surface.blit(o, (0, 0))
 
@@ -428,12 +442,12 @@ class Interface:
             if layer == RenderLayer.OVERLAY:
                 self._overlay.add_many_targets(p1)
             elif layer == RenderLayer.UNDERLAYER:
-                raise NotImplementedError()
+                self._underlayer.add_many_targets(p1)
         elif isinstance(p1, pygame.Surface) and p2 is not None:
             if layer == RenderLayer.OVERLAY:
                 self._overlay.add_single_target(p1, p2)
             elif layer == RenderLayer.UNDERLAYER:
-                raise NotImplementedError()
+                self._underlayer.add_single_target(p1, p2)
 
     def clear_layer(self, layer: RenderLayer) -> None:
         """
@@ -443,7 +457,7 @@ class Interface:
         if layer == RenderLayer.OVERLAY:
             self._overlay.clear()
         elif layer == RenderLayer.UNDERLAYER:
-            raise NotImplementedError()
+            self._underlayer.clear()
 
     def set_layer_opacity(self, o: int, layer: RenderLayer) -> None:
         """
@@ -455,7 +469,7 @@ class Interface:
         if layer == RenderLayer.OVERLAY:
             self._overlay.set_opacity(o)
         elif layer == RenderLayer.UNDERLAYER:
-            raise NotImplementedError()
+            self._underlayer.set_opacity(o)
 
     def get_layer_opacity(self, layer: RenderLayer) -> int:
         """Returns the interface's overlay or underlayer opacity."""
@@ -463,7 +477,7 @@ class Interface:
         if layer == RenderLayer.OVERLAY:
             return self._overlay.get_opacity()
         elif layer == RenderLayer.UNDERLAYER:
-            raise NotImplementedError()
+            return self._underlayer.get_opacity()
 
     def restore_layer(self, layer: RenderLayer) -> None:
         """Restores the last rendered surfaces to the interface's overlay or underlayer."""
@@ -471,7 +485,7 @@ class Interface:
         if layer == RenderLayer.OVERLAY:
             self._overlay.restore()
         elif layer == RenderLayer.UNDERLAYER:
-            raise NotImplementedError()
+            self._underlayer.restore()
 
 
 class _ComponentBinding:

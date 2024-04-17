@@ -245,7 +245,7 @@ PyInterfacer.set_overlay_opacity(integer-from-1-to-255)
 
 If you want a better control over what is rendered into each interface, you can also add render targets to overlays in each interface:
 
-```
+```py
 i = PyInterfacer.get_interface("interface-name")
 if i is not None:
   i.add_to_layer(surface, destionation, layer=RenderLayer.OVERLAY)
@@ -256,7 +256,14 @@ The functions to clear, restore and set opacity to the overlay also apply for pe
 
 # Underlayers
 
-Not yet implemented!
+Some times you many need to render something under the components, and above the background, like a game map, for example. For that, you can set render targets for the underlayer of each interface. Underlayers work exactly the same as overlays:
+
+```py
+i = PyInterfacer.get_interface("interface-name")
+if i is not None:
+  i.add_to_layer(surface, destionation, layer=RenderLayer.UNDERLAYER)
+  i.add_to_layer(((surface, destination), ...), layer=RenderLayer.UNDERLAYER)
+```
 
 # Components and attributes
 
