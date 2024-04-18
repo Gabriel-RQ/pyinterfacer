@@ -84,6 +84,15 @@ class Interface:
         cls.COMPONENT_CONVERSION_TABLE = component
         cls.GROUP_CONVERSION_TABLE = group
 
+    def set_background(self, bg: str) -> None:
+        """
+        Sets the interface background.
+
+        :param bg: A path to an image, or a color.
+        """
+
+        self._parse_background(bg)
+
     def _parse_background(self, bg) -> None:
         """
         Tries to load the 'background' interface attribute as an image, if it fails, considers it a color and uses it to fill the surface.
