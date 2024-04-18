@@ -18,6 +18,10 @@ from .util import OverlayManager
 
 """
 PROPOSAL: Add display type 'overlay' to interfaces. Interfaces with this display type would be rendered into the overlay, effectively being always rendered.
+
+PROPOSAL: Add a way to 'inject' programatically created components into an interface. That would allow to create components when the data needed to create them is dynamic.
+
+PROPOSAL: Add a 'reload' method, allowing to completely reload all the interfaces. Could be used when changing resolution, for example.
 """
 
 
@@ -117,6 +121,8 @@ class PyInterfacer:
         Removes all loaded interfaces. Not safe to call while updating or rendering any interface.
         """
 
+        cls._current_focus = None
+        cls._overlay = None
         cls.INTERFACES.clear()
         cls.COMPONENTS.clear()
 
@@ -226,8 +232,9 @@ class PyInterfacer:
         if cls._current_focus is not None:
             cls._current_focus.draw(cls._display)
 
-        if (o := cls._overlay.render()) is not None:
-            cls._display.blit(o, (0, 0))
+        if cls._overlay is not None:
+            if (o := cls._overlay.render()) is not None:
+                cls._display.blit(o, (0, 0))
 
     @overload
     @classmethod
@@ -260,6 +267,9 @@ class PyInterfacer:
         p1: Tuple | pygame.Surface,
         p2: Optional[pygame.Rect | Tuple[int, int]] = None,
     ) -> None:
+        if cls._overlay is None:
+            return
+
         # if drawing many images
         if isinstance(p1, tuple) and p2 is None:
             cls._overlay.add_many_targets(p1)
@@ -283,18 +293,24 @@ class PyInterfacer:
         :param o: An integer value ranging from 0 to 255.
         """
 
-        cls._overlay.set_opacity(o)
+        if cls._overlay is not None:
+            cls._overlay.set_opacity(o)
 
     @classmethod
     def get_overlay_opacity(cls) -> int:
-        """Returns the overlay opacity."""
+        """Returns the overlay opacity. If the overlay is not set, returns '-1'."""
+
+        if cls._overlay is None:
+            return -1
+
         return cls._overlay.get_opacity()
 
     @classmethod
     def restore_overlay(cls) -> None:
         """Restores the last rendered surfaces to the overlay."""
 
-        cls._overlay.restore()
+        if cls._overlay is not None:
+            cls._overlay.restore()
 
     @classmethod
     def handle(cls) -> None:
