@@ -1,0 +1,27 @@
+interface: menu
+background: "#1c1c1c"
+display: default
+styles:
+  - name: font-style
+    font: arial
+    font_color: "#c1c1c1"
+    font_size: 32
+    bold: true
+components:
+  - type: menu-title-button
+    id: play-btn
+    style: font-style
+    x: 50%
+    y: 50%
+    text: Pong!
+    font_size: 256
+    focus_color: "#1c1c1c"
+
+  - type: text-button
+    id: exit-btn
+    style: font-style
+    x: 95%
+    y: 35
+    alignment: midright
+    text: exit
+    focus_color: "#bc9ede"

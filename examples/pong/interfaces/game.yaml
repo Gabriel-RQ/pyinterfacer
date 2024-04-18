@@ -1,0 +1,59 @@
+interface: game
+background: "#1c1c1c"
+display: grid
+rows: 1
+columns: 2
+styles:
+  - name: font-style
+    font: arial
+    font_color: "#c1c1c1"
+    font_size: 32
+    bold: true
+  - name: player-style
+    color: "#c1c1c1"
+    speed: 3
+    y: 50%
+    height: 75
+    width: 15
+components:
+  - type: text
+    id: p1-score-txt
+    style: font-style
+    grid_cell: 0
+    text: "0"
+    font_color: "#303030"
+    font_size: 424
+
+  - type: text
+    id: p2-score-txt
+    style: font-style
+    grid_cell: 1
+    text: "0"
+    font_color: "#303030"
+    font_size: 424
+
+  - type: paddle
+    id: player1
+    style: player-style
+    x: 5%
+
+  - type: paddle
+    id: player2
+    style: player-style
+    x: 95%
+
+  - type: ball
+    id: ball
+    color: "#c1c1c1"
+    speed: 4
+    radius: 12
+    y: 50%
+    x: 50%
+
+  - type: dotted-line
+    id: _
+    height: 100%
+    x: 50%
+    y: 50%
+    color: "#c1c1c1"
+    thickness: 2
