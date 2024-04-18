@@ -5,13 +5,15 @@
 
 import pygame
 
-from typing import Optional, Tuple
+from typing import Optional, Tuple, overload
 from .text import Text
 from .hoverable import Hoverable
 
 
 class Input(Text, Hoverable):
     """Simple input component."""
+
+    IS_ANY_ACTIVE = False
 
     def __init__(
         self,
@@ -42,26 +44,48 @@ class Input(Text, Hoverable):
             else self._fill_color.r - 1
         )
 
+    def _activate(self) -> None:
+        """Gives focus to the Input."""
+        self.active = True
+        Input.IS_ANY_ACTIVE = True
+        pygame.key.start_text_input()
+        pygame.key.set_repeat(250, 50)
+
+    def _deactivate(self) -> None:
+        """Removes focus from the Input."""
+        self.active = False
+        Input.IS_ANY_ACTIVE = False
+        pygame.key.stop_text_input()
+        pygame.key.set_repeat(0, 0)
+
     def handle_click(self, mouse_pos: Tuple[int, int]) -> None:
         """Checks if this component was clicked, if so, activates it, otherwise inactivate it."""
 
         if self.rect.collidepoint(mouse_pos):
-            self.active = True
+            self._activate()
         else:
-            self.active = False
+            self._deactivate()
 
-    def handle_input(self, pressed_key: int, key_unicode: str) -> None:
+    @overload
+    def handle_input(self, pressed_key: int) -> None: ...
+
+    @overload
+    def handle_input(self, text: str) -> None: ...
+
+    def handle_input(self, p1: str | int) -> None:
         """Handles text input on the component."""
 
         if not self.active:
             return
 
-        if pressed_key == pygame.K_BACKSPACE:
-            self.text = self.text[:-1]
-        elif pressed_key in (pygame.K_RETURN, pygame.K_KP_ENTER, pygame.K_TAB):
-            self.active = False
-        elif self.max_length is None or len(self.text) < self.max_length:
-            self.text += key_unicode
+        if isinstance(p1, str):
+            if self.max_length is None or len(self.text) < self.max_length:
+                self.text += p1
+        elif isinstance(p1, int):
+            if p1 == pygame.K_BACKSPACE:
+                self.text = self.text[:-1]
+            elif p1 in (pygame.K_RETURN, pygame.K_KP_ENTER, pygame.K_TAB):
+                self._deactivate()
 
     def hover_action(self) -> None:
         if self.bg_focus_color is None:
