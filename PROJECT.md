@@ -212,6 +212,7 @@ class PyInterfacer:
 
     # Stores all the key bindings. Each key represents a pygame key constant.
     _KEY_BINDINGS: Dict[int, Callable] = {}
+    _KEYUP_BINDINGS: Dict[int, Callable] = {}
 
     _COMPONENT_CONVERSION_TABLE: Dict[str, Component] # maps a type (key) to a component class (value). Used to handle conversion from YAML atributes to component instances
     _GROUP_CONVERSION_TABLE: Dict[str, ComponentGroup] # Maps a component type (key) to a component group. Used to handle the creation of specific groups for some component types
@@ -287,7 +288,7 @@ class PyInterfacer:
     def handle_event(cls, event: pygame.Event) -> None
 
     # Binds a keypress to a callback
-    def bind_keys(cls, b: Dict[int, Callable]) -> None
+    def bind_keys(cls, b: Dict[int, Dict[Literal["release", "press"], Callable]]) -> None
 
 # This class handles a single interface
 class Interface:
@@ -314,6 +315,9 @@ class Interface:
     def draw(surface: pygame.Surface) -> None
     # Renders and updates the interface to the display
     def handle(surface: pygame.Surface) -> None
+
+    # Sets the interface background
+    def set_background(self, bg: str) -> None
 
     # Returns a dictionary containg the components of the interface, grouped by their 'id'
     def component_dict() -> Dict[str, Component]

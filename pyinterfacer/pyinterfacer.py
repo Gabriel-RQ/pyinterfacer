@@ -8,7 +8,7 @@ import yaml
 import os
 import re
 
-from typing import Optional, Dict, Callable, Union, Tuple, overload
+from typing import Optional, Dict, Callable, Union, Tuple, Literal, overload
 from enum import Enum
 from .interface import Interface
 from .groups import *
@@ -39,6 +39,7 @@ class PyInterfacer:
 
     # Stores all the key bindings. Each key represents a pygame key constant.
     _KEY_BINDINGS: Dict[int, Callable] = {}
+    _KEYUP_BINDINGS: Dict[int, Callable] = {}
 
     # Maps a component type (key) a component class (value). Used to handle conversion from YAML loaded components to their instances
     _COMPONENT_CONVERSION_TABLE: Dict[str, Component] = {
@@ -91,6 +92,8 @@ class PyInterfacer:
         if os.path.exists(p):
             for interface_file in os.listdir(p):
                 cls.load(os.path.join(p, interface_file))
+        else:
+            raise InvalidInterfaceDirectoryException(path)
 
     @classmethod
     def load(cls, file: str) -> None:
@@ -376,14 +379,20 @@ class PyInterfacer:
             cls._current_focus.emit_input(event)
 
     @classmethod
-    def bind_keys(cls, b: Dict[int, Callable]) -> None:
+    def bind_keys(
+        cls, b: Dict[int, Dict[Literal["press", "release"], Callable]]
+    ) -> None:
         """
         Binds a keypress to a callback.
 
-        :param b: A mapping where the keys are integers (pygame key constants) and the values are callbacks.
+        :param b: A mapping where the keys are integers (pygame key constants) and the values are dictionaries in the format {"press": Callback?, "release": Callback?}. At least one of the callbacks should be provided.
         """
 
-        cls._KEY_BINDINGS.update(b)
+        for k, v in b.items():
+            if "press" in v and callable((d := v["press"])):
+                cls._KEY_BINDINGS[k] = d
+            if "release" in v and callable((u := v["release"])):
+                cls._KEYUP_BINDINGS[k] = u
 
     @classmethod
     def handle_event(cls, event: pygame.Event) -> None:
@@ -406,6 +415,12 @@ class PyInterfacer:
                 else:
                     if (b := cls._KEY_BINDINGS.get(event.key)) is not None:
                         b()
+            case pygame.KEYUP:
+                if (
+                    not Input.IS_ANY_ACTIVE
+                    and (b := cls._KEYUP_BINDINGS.get(event.key)) is not None
+                ):
+                    b()
 
     @classmethod
     def handle_hover(cls) -> None:
@@ -521,6 +536,13 @@ class InvalidDisplayTypeException(Exception):
     def __init__(self, interface: str) -> None:
         super().__init__(
             f"The specified display type for the interface '{interface}' is invalid. It should be either 'default' or 'grid'. Note that grid displays shoud provide 'rows' and 'columns'."
+        )
+
+
+class InvalidInterfaceDirectoryException(Exception):
+    def __init__(self, dir_: str) -> None:
+        super().__init__(
+            f"The specified directory ({dir_}) does not exist or is invalid. Could not load any interface."
         )
 
 
