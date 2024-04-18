@@ -18,8 +18,6 @@ from .util import OverlayManager
 
 """
 PROPOSAL: Add display type 'overlay' to interfaces. Interfaces with this display type would be rendered into the overlay, effectively being always rendered.
-
-PROPOSAL: Add keybindings for actions, making it easier to define callbacks for certain keypresses.
 """
 
 
@@ -34,6 +32,9 @@ class PyInterfacer:
     INTERFACES: Dict[str, Interface] = {}
     # Stores all the components. Each key represents an id.
     COMPONENTS: Dict[str, Component] = {}
+
+    # Stores all the key bindings. Each key represents a pygame key constant.
+    _KEY_BINDINGS: Dict[int, Callable] = {}
 
     # Maps a component type (key) a component class (value). Used to handle conversion from YAML loaded components to their instances
     _COMPONENT_CONVERSION_TABLE: Dict[str, Component] = {
@@ -359,6 +360,16 @@ class PyInterfacer:
             cls._current_focus.emit_input(event)
 
     @classmethod
+    def bind_keys(cls, b: Dict[int, Callable]) -> None:
+        """
+        Binds a keypress to a callback.
+
+        :param b: A mapping where the keys are integers (pygame key constants) and the values are callbacks.
+        """
+
+        cls._KEY_BINDINGS.update(b)
+
+    @classmethod
     def handle_event(cls, event: pygame.Event) -> None:
         """
         Handles pygame events. This let's PyInterfacer handle it's Clickable and Input components, for example.
@@ -370,8 +381,15 @@ class PyInterfacer:
             case pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
                     cls.emit_click()
-            case pygame.TEXTINPUT | pygame.TEXTEDITING | pygame.KEYDOWN:
-                cls.emit_input(event)
+            case pygame.TEXTINPUT | pygame.TEXTEDITING:
+                if Input.IS_ANY_ACTIVE:
+                    cls.emit_input(event)
+            case pygame.KEYDOWN:
+                if Input.IS_ANY_ACTIVE:
+                    cls.emit_input(event)
+                else:
+                    if (b := cls._KEY_BINDINGS.get(event.key)) is not None:
+                        b()
 
     @classmethod
     def handle_hover(cls) -> None:

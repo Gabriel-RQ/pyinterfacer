@@ -210,6 +210,9 @@ class PyInterfacer:
     INTERFACES: Dict[str, Interface] # Stores all the interfaces, by their name
     COMPONENTS: Dict[str, Component] # Stores all the components, by their id
 
+    # Stores all the key bindings. Each key represents a pygame key constant.
+    _KEY_BINDINGS: Dict[int, Callable] = {}
+
     _COMPONENT_CONVERSION_TABLE: Dict[str, Component] # maps a type (key) to a component class (value). Used to handle conversion from YAML atributes to component instances
     _GROUP_CONVERSION_TABLE: Dict[str, ComponentGroup] # Maps a component type (key) to a component group. Used to handle the creation of specific groups for some component types
 
@@ -277,8 +280,14 @@ class PyInterfacer:
     def restore_overlay(cls) -> None
     # Sets the overlay surface opacity
     def set_overlay_opacity(cls, o: int) -> None
-    # returns the current overlay opacity
+    # Returns the current overlay opacity
     def get_overlay_opacity(cls) -> int
+
+    # Handles pygame events
+    def handle_event(cls, event: pygame.Event) -> None
+
+    # Binds a keypress to a callback
+    def bind_keys(cls, b: Dict[int, Callable]) -> None
 
 # This class handles a single interface
 class Interface:
