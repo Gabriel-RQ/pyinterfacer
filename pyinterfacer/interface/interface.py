@@ -39,7 +39,7 @@ class Interface:
         self.columns = columns
         self.size = size
 
-        self.surface = pygame.Surface(self.size).convert()
+        self.surface = pygame.Surface(self.size, pygame.SRCALPHA).convert_alpha()
         self._overlay = OverlayManager()
         self._underlayer = OverlayManager()
 
@@ -50,7 +50,7 @@ class Interface:
             pygame.Surface((self.size), pygame.SRCALPHA).convert_alpha()
         )  # renders after the background and before components
 
-        self._bg_color = "black"
+        self._bg_color = (0, 0, 0, 0)
         self._bg_image: Optional[pygame.Surface] = None
 
         self._group = pygame.sprite.Group()

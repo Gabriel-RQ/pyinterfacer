@@ -20,8 +20,8 @@ components: <list of components>
 Where:
 
 - `interface` is the name of the interface;
-- `background` is an optional attribute that can be either a string representing a color or a path to an image. If it's an image, it gets resized to the display size. Defaults to black;
-- `display` is the interfac's display type. Either 'grid' or 'default';
+- `background` is an optional attribute that can be either a string representing a color or a path to an image. If it's an image, it gets resized to the display size. Defaults to transparent;
+- `display` is the interface's display type. Either 'grid' or 'default';
 - `styles` is a list of style classes, where the attributes can be any accepted by the components. Defined as below:
 
 ```yaml
@@ -228,7 +228,7 @@ Each component can define a single style class, or a list of style classes. If a
 
 # Overlays
 
-May you need to render anything other than components at the display, PyInterfacer allows to do so through overlays. PyInterfacer have a global overlay, allowing you to render anything above every interface. All you need to do is to add render targets to the overlay:
+May you need to render anything other than components at the display, PyInterfacer allows to do so through overlays. PyInterfacer has a global overlay, allowing you to render anything above every interface. All you need to do is to add render targets to the overlay:
 
 ```py
 PyInterfacer.add_to_overlay(surface, destination) # to add a single Surface
@@ -252,7 +252,7 @@ if i is not None:
   i.add_to_layer(((surface, destination), ...), layer=RenderLayer.OVERLAY)
 ```
 
-The functions to clear, restore and set opacity to the overlay also apply for per interface overlays.
+The methods to clear, restore and set opacity to the overlay also apply for interface overlays.
 
 # Underlayers
 
