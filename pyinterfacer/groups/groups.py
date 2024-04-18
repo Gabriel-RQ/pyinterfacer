@@ -119,4 +119,8 @@ class InputGroup(ClickableGroup, HoverableGroup):
 
         for sprite in sprites:
             if isinstance(sprite, Input):
-                sprite.handle_input(event.key, event.unicode)
+                match event.type:
+                    case pygame.KEYDOWN:
+                        sprite.handle_input(event.key)
+                    case pygame.TEXTINPUT | pygame.TEXTEDITING:
+                        sprite.handle_input(event.text)
