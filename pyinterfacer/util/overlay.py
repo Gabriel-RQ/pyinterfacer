@@ -48,10 +48,14 @@ class OverlayManager:
         """Clears the overlay surface."""
 
         # Keeps a copy of the last render targets to restore
-        self._render_targets_backup = {
-            "single": self._render_targets["single"].copy(),
-            "many": self._render_targets["many"].copy(),
-        }
+        if (
+            len(self._render_targets["single"]) > 0
+            or len(self._render_targets["many"]) > 0
+        ):
+            self._render_targets_backup = {
+                "single": self._render_targets["single"].copy(),
+                "many": self._render_targets["many"].copy(),
+            }
         self._render_targets["single"].clear()
         self._render_targets["many"].clear()
 
