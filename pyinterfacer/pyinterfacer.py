@@ -20,8 +20,6 @@ from .util import OverlayManager
 PROPOSAL: Add display type 'overlay' to interfaces. Interfaces with this display type would be rendered into the overlay, effectively being always rendered.
 
 PROPOSAL: Add keybindings for actions, making it easier to define callbacks for certain keypresses.
-
-PROPOSAL: Make a better system for handling keyboard input.
 """
 
 
@@ -359,6 +357,21 @@ class PyInterfacer:
 
         if cls._current_focus is not None:
             cls._current_focus.emit_input(event)
+
+    @classmethod
+    def handle_event(cls, event: pygame.Event) -> None:
+        """
+        Handles pygame events. This let's PyInterfacer handle it's Clickable and Input components, for example.
+
+        :param event: Pygame event.
+        """
+
+        match event.type:
+            case pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    cls.emit_click()
+            case pygame.TEXTINPUT | pygame.TEXTEDITING | pygame.KEYDOWN:
+                cls.emit_input(event)
 
     @classmethod
     def handle_hover(cls) -> None:
