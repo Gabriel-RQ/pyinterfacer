@@ -51,5 +51,10 @@ def setup_interfaces(exit_action: Callable):
                 "press": lambda: player2.move("down"),
                 "release": player2.stop,
             },
+            pygame.K_SPACE: {"press": lambda: PyInterfacer.change_focus("score-pause")},
         }
     )
+
+    # Setup component bindings
+    PyInterfacer.bind("player1", "score", "p1-score-txt", "text")
+    PyInterfacer.bind("player2", "score", "p2-score-txt", "text")

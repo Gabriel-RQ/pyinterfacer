@@ -1,0 +1,11 @@
+interface: score-pause
+display: default
+components:
+  - type: text
+    id: _
+    x: 50%
+    y: 60%
+    text: Press SPACE to start
+    font: arial
+    font_color: "#c1c1c1"
+    font_size: 42
