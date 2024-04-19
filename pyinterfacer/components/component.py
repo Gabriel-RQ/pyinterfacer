@@ -72,6 +72,9 @@ class Component(pygame.sprite.Sprite):
             None  # Should be set by custom components, to indicate which of the default component set type the custom components belong to (used for group handling)
         )
 
+        self.image = pygame.Surface((self.width, self.height))
+        self.rect = self.image.get_rect()
+
     def preload_image(self) -> None:
         """
         This method does nothing by default. Can be overwritten by inheriting classes to execute image preloading logic.

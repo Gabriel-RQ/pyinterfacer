@@ -93,6 +93,14 @@ class Interface:
 
         self._parse_background(bg)
 
+    def get_type_group(self, type_: str) -> Optional[ComponentGroup]:
+        """
+        Returns a specific component type group if it exists, otherwise None.
+
+        :param type_: Component type.
+        """
+        return self._type_groups.get(type_)
+
     def _parse_background(self, bg) -> None:
         """
         Tries to load the 'background' interface attribute as an image, if it fails, considers it a color and uses it to fill the surface.
@@ -288,6 +296,9 @@ class Interface:
         :param surface: Pygame Surface to render this interface to.
         """
 
+        if surface is None:
+            return
+
         # Renders the background
         if self._bg_image is not None:
             self.surface.blit(self._bg_image, (0, 0))
@@ -303,8 +314,8 @@ class Interface:
 
         # Renders subgroups
         if len(self._subgroups) > 0:
-            for group in self._subgroups:
-                group.draw(self.surface)
+            for g in self._subgroups:
+                g.draw(self.surface)
 
         # Renders the overlay
         if (o := self._overlay.render()) is not None:

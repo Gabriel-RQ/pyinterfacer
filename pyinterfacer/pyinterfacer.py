@@ -22,6 +22,18 @@ PROPOSAL: Add display type 'overlay' to interfaces. Interfaces with this display
 PROPOSAL: Add a way to 'inject' programatically created components into an interface. That would allow to create components when the data needed to create them is dynamic.
 
 PROPOSAL: Add a 'reload' method, allowing to completely reload all the interfaces. Could be used when changing resolution, for example.
+
+PROPOSAL: Add a callback to run after initializing each component, allowing to execute code directly after instantiating a component.
+
+PROPOSAL: Add a 'when' callback. It should receive a condition, and when it is true, a callback is executed.
+
+TODO: Looks like PyInterfaceer.update() -> Interface.update() -> Component.update() is not setting Component.image when first called (how?). Steps to reproduce:
+    - Run pong example
+    - Let one of the sides score
+    - The game will break: TypeError: Source objects must be a surface
+    - Printing each sprite and it's image attribute in Interface.draw shows that Component.image is None when Pong tries to change focus.
+    - Calling self.update (presumably self.preload_image as well) on the listed components with no image solves the issue.
+OBS: Defined Component.image and Component.rect at the constructor. It fixed the issue. It seems that when PyInterfacer.change_focus is called, the handling of the current focus continue wherever it stoped, instead of restarting through the .update() methods, which can cause it to resume on .draw() when there was no image and rect defined for the Component.
 """
 
 
@@ -327,12 +339,16 @@ class PyInterfacer:
             cls.handle_hover()
 
     @classmethod
-    def change_focus(cls, interface: str) -> None:
+    def change_focus(cls, interface: Optional[str]) -> None:
         """
         Changes the currently focused interface.
 
         :param interface: Name of the interface to give focus.
         """
+
+        if interface is None:
+            cls._current_focus = None
+            return
 
         if interface in cls.INTERFACES:
             cls._current_focus = cls.INTERFACES[interface]
@@ -389,6 +405,9 @@ class PyInterfacer:
         """
 
         for k, v in b.items():
+            if not isinstance(v, dict):
+                continue
+
             if "press" in v and callable((d := v["press"])):
                 cls._KEY_BINDINGS[k] = d
             if "release" in v and callable((u := v["release"])):
