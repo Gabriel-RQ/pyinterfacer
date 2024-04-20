@@ -77,6 +77,12 @@ class Paddle(Entity):
 
         self._moving = {"up": False, "down": False}
 
+    def reset_pos(self) -> None:
+        i = PyInterfacer.get_interface(self.interface)
+        width, height = i.size
+
+        self.y = height // 2
+
     def move(self, where: Literal["up", "down"]) -> None:
         self._moving[where] = True
 
@@ -114,11 +120,31 @@ class Ball(Entity):
         self._vy = self.speed
         # Starts the ball in a random direction
         self._x_modifier = random.choice([-1, 1])
-        self._y_modifier = random.choice([-1, 1])
+        self._y_modifier = 0
 
         self._particles = ParticleManager(color=self.color)
 
+
         self.preload_image()
+
+    def after_load(self, interface) -> None:
+        self._interface_instance = interface
+        self._paddle_group: PaddleGroup = interface.get_type_group("paddle")
+        self._p1: Paddle = PyInterfacer.get_by_id("player1")
+        self._p2: Paddle = PyInterfacer.get_by_id("player2")
+
+        # adds the particles to be rendered
+        interface.add_subgroup(self._particles.group)
+        
+
+    def reset(self) -> None:
+        self.x = self._interface_instance.width // 2
+        self.y =  self._interface_instance.height // 2
+
+        self._vx = self.speed
+        self._vy = self.speed
+        self._x_modifier = random.choice([-1, 1])
+        self._y_modifier = 0
 
     def preload_image(self) -> None:
         self.image = pygame.Surface((self.diameter, self.diameter), pygame.SRCALPHA)
@@ -129,18 +155,12 @@ class Ball(Entity):
     def update(self) -> None:
         self._align()
 
-        i = PyInterfacer.get_interface(self.interface)
-        width, height = i.size
-        paddle_group: PaddleGroup = i.get_type_group("paddle")
-        p1: Paddle = PyInterfacer.get_by_id("player1")
-        p2: Paddle = PyInterfacer.get_by_id("player2")
-
         # Ball movement
         self.x += self._vx * self._x_modifier
         self.y += self._vy * self._y_modifier
 
         # Collision detection
-        if self.y < 0 or self.y > height:
+        if self.y < 0 or self.y > self._interface_instance.height:
             self._y_modifier *= -1
             self._particles.generate(
                 35,
@@ -150,14 +170,20 @@ class Ball(Entity):
 
         if self.x < 0:
             self._x_modifier = 1
-            p2.score += 1
+            self._p2.score += 1
+            self.reset()
+            self._p1.reset_pos()
+            self._p2.reset_pos()
             PyInterfacer.change_focus("score-pause")
-        elif self.x > width:
+        elif self.x > self._interface_instance.width:
             self._x_modifier = -1
-            p1.score += 1
+            self._p1.score += 1
+            self.reset()
+            self._p1.reset_pos()
+            self._p2.reset_pos()
             PyInterfacer.change_focus("score-pause")
 
-        collided_paddle: Paddle = paddle_group.ball_collided(self)
+        collided_paddle: Paddle = self._paddle_group.ball_collided(self)
         if collided_paddle:
             # Reflect the ball based on where it hit the paddle
             offset = (self.y - collided_paddle.y) / (
@@ -182,9 +208,6 @@ class Ball(Entity):
                 where=(collided_paddle.x, collided_paddle.y),
                 direction_modifier=(self._x_modifier, 0),
             )
-
-        # adds the particles to be rendered
-        i.add_subgroup(self._particles._particles)
 
 
 class PaddleGroup(ComponentGroup):

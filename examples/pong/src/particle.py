@@ -65,6 +65,10 @@ class ParticleManager:
         )
         self._particles = ParticleGroup()
 
+    @property
+    def group(self) -> ParticleGroup:
+        return self._particles
+
     def clear(self) -> None:
         self._particles.clear()
 

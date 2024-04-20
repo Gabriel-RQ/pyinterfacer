@@ -18,7 +18,11 @@ class Main:
 
         self._running = True
 
-        setup_interfaces(exit_action=self.stop)
+        setup_interfaces(exit_action=self.stop, finish_game=self.finish_game)
+
+    def finish_game(self):
+        PyInterfacer.unload()
+        setup_interfaces(exit_action=self.stop, finish_game=self.finish_game)
 
     def stop(self):
         self._running = False

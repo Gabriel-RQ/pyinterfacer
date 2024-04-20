@@ -6,7 +6,7 @@ from typing import Callable
 from .components import *
 
 
-def setup_interfaces(exit_action: Callable):
+def setup_interfaces(exit_action: Callable, finish_game: Callable):
 
     # Setup custom components and groups
     PyInterfacer.add_custom_components(
@@ -27,12 +27,14 @@ def setup_interfaces(exit_action: Callable):
     PyInterfacer.map_actions(
         {
             "exit-btn": exit_action,
-            "play-btn": lambda: PyInterfacer.change_focus("game"),
+            "play-btn": play,
+            "leave-btn": finish_game,
+            "back-menu-btn": finish_game,
         }
     )
 
     PyInterfacer.load_all(os.path.abspath("interfaces/"))
-    PyInterfacer.change_focus("game")
+    PyInterfacer.change_focus("menu")
 
     # Setup keybindings
     player1: Paddle = PyInterfacer.get_by_id("player1")
@@ -51,10 +53,18 @@ def setup_interfaces(exit_action: Callable):
                 "press": lambda: player2.move("down"),
                 "release": player2.stop,
             },
-            pygame.K_SPACE: {"press": lambda: PyInterfacer.change_focus("score-pause")},
+            pygame.K_SPACE: {"press": unpause_after_score},
         }
     )
 
     # Setup component bindings
     PyInterfacer.bind("player1", "score", "p1-score-txt", "text")
     PyInterfacer.bind("player2", "score", "p2-score-txt", "text")
+
+
+def unpause_after_score():
+    if (f := PyInterfacer.get_focused()) is not None and f.name != "menu":
+        PyInterfacer.change_focus("game")
+
+def play():
+    PyInterfacer.change_focus("game")

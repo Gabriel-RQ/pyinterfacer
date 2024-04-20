@@ -57,3 +57,11 @@ components:
     y: 50%
     color: "#c1c1c1"
     thickness: 2
+
+  - type: text-button
+    id: back-menu-btn
+    x: 50%
+    y: 95%
+    style: font-style
+    text: Menu
+    focus_color: "#bc9ede"
