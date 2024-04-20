@@ -23,8 +23,6 @@ PROPOSAL: Add a way to 'inject' programatically created components into an inter
 
 PROPOSAL: Add a 'reload' method, allowing to completely reload all the interfaces. Could be used when changing resolution, for example.
 
-PROPOSAL: Add a callback to run after initializing each component, allowing to execute code directly after instantiating a component.
-
 PROPOSAL: Add a 'when' callback. It should receive a condition, and when it is true, a callback is executed.
 
 TODO: Looks like PyInterfaceer.update() -> Interface.update() -> Component.update() is not setting Component.image when first called (how?). Steps to reproduce:
@@ -48,6 +46,8 @@ class PyInterfacer:
     INTERFACES: Dict[str, Interface] = {}
     # Stores all the components. Each key represents an id.
     COMPONENTS: Dict[str, Component] = {}
+
+    _PAUSED = False
 
     # Stores all the key bindings. Each key represents a pygame key constant.
     _KEY_BINDINGS: Dict[int, Callable] = {}
@@ -254,6 +254,29 @@ class PyInterfacer:
             if (o := cls._overlay.render()) is not None:
                 cls._display.blit(o, (0, 0))
 
+    @classmethod
+    def handle(cls) -> None:
+        """
+        Updates, renders and handles hover events in the currently focused interface.
+        """
+
+        if (cls._current_focus is not None) and (not cls._PAUSED):
+            cls.update()
+            cls.draw()
+            cls.handle_hover()
+
+    @classmethod
+    def pause(cls) -> None:
+        """Pauses the currently focused interface."""
+
+        cls._PAUSED = True
+    
+    @classmethod
+    def unpause(cls) -> None:
+        """Unpauses the currently focused interface."""
+
+        cls._PAUSED = False
+
     @overload
     @classmethod
     def add_to_overlay(
@@ -329,17 +352,6 @@ class PyInterfacer:
 
         if cls._overlay is not None:
             cls._overlay.restore()
-
-    @classmethod
-    def handle(cls) -> None:
-        """
-        Updates, renders and handles hover events in the currently focused interface.
-        """
-
-        if cls._current_focus is not None:
-            cls.update()
-            cls.draw()
-            cls.handle_hover()
 
     @classmethod
     def change_focus(cls, interface: Optional[str]) -> None:
@@ -502,7 +514,7 @@ class PyInterfacer:
     @classmethod
     def map_actions(cls, actions: Dict[str, Callable]) -> None:
         """
-        Maps a component to an action callback. Used to define actions for Clickable components.
+        Maps a component to an action callback. Used to define actions for Clickable components. Components with the same ID will be mapped to the same action.
 
         :param actions: Actions mapping in the format `{id: callback}`.
         """
