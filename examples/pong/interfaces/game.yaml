@@ -59,7 +59,7 @@ components:
     thickness: 2
 
   - type: text-button
-    id: back-menu-btn
+    id: leave-btn
     x: 50%
     y: 95%
     style: font-style

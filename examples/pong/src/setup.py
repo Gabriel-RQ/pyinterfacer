@@ -6,8 +6,7 @@ from typing import Callable
 from .components import *
 
 
-def setup_interfaces(exit_action: Callable, finish_game: Callable):
-
+def setup_interfaces(exit_action: Callable, finish_game: Callable, full_screen: Callable):
     # Setup custom components and groups
     PyInterfacer.add_custom_components(
         {
@@ -27,9 +26,9 @@ def setup_interfaces(exit_action: Callable, finish_game: Callable):
     PyInterfacer.map_actions(
         {
             "exit-btn": exit_action,
-            "play-btn": play,
+            "play-btn": lambda: PyInterfacer.change_focus("game"),
             "leave-btn": finish_game,
-            "back-menu-btn": finish_game,
+            "fullscreen-btn": full_screen,
         }
     )
 
@@ -42,7 +41,8 @@ def setup_interfaces(exit_action: Callable, finish_game: Callable):
 
     PyInterfacer.bind_keys(
         {
-            pygame.K_ESCAPE: {"press": lambda: PyInterfacer.change_focus("menu")},
+            pygame.K_ESCAPE: {"press": finish_game},
+            pygame.K_f: {"press": full_screen},
             pygame.K_w: {"press": lambda: player1.move("up"), "release": player1.stop},
             pygame.K_s: {
                 "press": lambda: player1.move("down"),
@@ -63,8 +63,5 @@ def setup_interfaces(exit_action: Callable, finish_game: Callable):
 
 
 def unpause_after_score():
-    if (f := PyInterfacer.get_focused()) is not None and f.name != "menu":
+    if (f := PyInterfacer.get_focused()) is not None and f.name not in ("menu", "victory"):
         PyInterfacer.change_focus("game")
-
-def play():
-    PyInterfacer.change_focus("game")

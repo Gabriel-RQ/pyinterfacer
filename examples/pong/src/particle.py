@@ -1,10 +1,13 @@
 import pygame
 import random
 
+from pyinterfacer.util import Font
 from typing import Tuple, Callable, Optional
 
 
 class Particle(pygame.sprite.Sprite):
+    """Simple particle class that moves in a direction and fades out over time."""
+
     def __init__(
         self, x: int, y: int, r: int, color: str, dir_x: int = 1, dir_y: int = 1
     ) -> None:
@@ -46,23 +49,60 @@ class Particle(pygame.sprite.Sprite):
         self._vy = max(0, self._vy)
 
 
+class TextParticle(pygame.sprite.Sprite):
+    """Text particle that fades out over time."""
+
+    def __init__(self, text: str, color: str, x: int, y: int) -> None:
+        super().__init__()
+
+        self.x = x
+        self.y = y
+        self.color = color
+
+        self.text = text
+        self._font_size = 32
+
+        self._angle = random.uniform(-45, 45)
+        self.font = Font("Arial", 24, self.color, bold=True, italic=False, antialias=True)
+
+        self._x_modifier = random.choice([-1, 1])
+        self._y_modifier = 0
+
+        self._scale_modifier = random.uniform(0.75, 1.25)
+        
+    
+    def update(self) -> None:
+        self.image = pygame.transform.rotate(self.font.render(self.text), self._angle)
+        self.image = pygame.transform.smoothscale_by(self.image, self._scale_modifier)
+        self.rect = self.image.get_rect(center=(self.x, self.y))
+
+        # gives the text a "floating" effect
+        self.x += random.uniform(-2, 2) * self._x_modifier
+        self.y += random.uniform(-2, 2) * self._y_modifier
+
+        self._scale_modifier -= 0.0075
+        self._scale_modifier = max(0, self._scale_modifier)
+
+
+
 class ParticleGroup(pygame.sprite.Group):
     def update(self) -> None:
         for sprite in self.sprites():
-            if sprite._vx == 0 and sprite._vy == 0:
-                self.remove(sprite)
-            else:
-                sprite.update()
+            if isinstance(sprite, Particle):
+                if sprite._vx == 0 and sprite._vy == 0:
+                    self.remove(sprite)
+                else:
+                    sprite.update()
+            elif isinstance(sprite, TextParticle):
+                if sprite._scale_modifier == 0:
+                    self.remove(sprite)
+                else:
+                    sprite.update()
 
 
 class ParticleManager:
-    def __init__(self, color: str, radius_function: Optional[Callable] = None) -> None:
+    def __init__(self, color: str) -> None:
         self.color = color
-        self._define_radius = (
-            radius_function
-            if radius_function is not None
-            else lambda: random.uniform(0.75, 3.75)
-        )
         self._particles = ParticleGroup()
 
     @property
@@ -77,13 +117,24 @@ class ParticleManager:
         amount: int,
         where: Tuple[int, int],
         direction_modifier: Tuple[int, int] = (1, 1),
+        radius_func: Optional[Callable] = None,
     ) -> None:
+        """
+        Generate circle particles that fade over time.
+
+        :param amount: The amount of particles to generate each frame.
+        :param where: The position where the particles will be generated.
+        :param direction_modifier: The direction the particles will move in.
+        :param radius_func: A function that returns a random radius for the particles.
+        """
+        define_radius = lambda: random.uniform(0.75, 3.75)
+
         self._particles.add(
             *[
                 Particle(
                     x=where[0],
                     y=where[1],
-                    r=self._define_radius(),
+                    r=radius_func() if radius_func else define_radius(),
                     color=self.color,
                     dir_x=direction_modifier[0],
                     dir_y=direction_modifier[1],
@@ -92,6 +143,9 @@ class ParticleManager:
             ]
         )
 
+    def spawn_text(self, text: str, where: Tuple[int, int]) -> None:
+        self._particles.add(TextParticle(text, self.color, where[0], where[1]))
+
     @property
     def is_empty(self) -> bool:
         return len(self._particles) == 0
@@ -99,3 +153,5 @@ class ParticleManager:
     def handle(self, display: pygame.Surface) -> None:
         self._particles.draw(display)
         self._particles.update()
+
+

@@ -136,7 +136,6 @@ class Ball(Entity):
         # adds the particles to be rendered
         interface.add_subgroup(self._particles.group)
         
-
     def reset(self) -> None:
         self.x = self._interface_instance.width // 2
         self.y =  self._interface_instance.height // 2
@@ -208,10 +207,34 @@ class Ball(Entity):
                 where=(collided_paddle.x, collided_paddle.y),
                 direction_modifier=(self._x_modifier, 0),
             )
+            self._particles.spawn_text(random.choice(["Ping!", "Pong!"]), (self.x, self.y))
 
+        self._particles.generate(1, self.rect.center, direction_modifier=(self._x_modifier, self._y_modifier), radius_func=lambda: random.uniform(0.75, 1.25))
 
 class PaddleGroup(ComponentGroup):
     def ball_collided(self, ball: Ball):
         """Returns the paddle the ball collided with."""
 
         return pygame.sprite.spritecollideany(ball, self)
+    
+    def handle_victory(self) -> None:
+        p1: Paddle = PyInterfacer.get_by_id("player1")
+        p2: Paddle = PyInterfacer.get_by_id("player2")
+
+        score_diff = abs(p1.score - p2.score)
+
+        if score_diff >= 2:
+            if p1.score == 5:
+                PyInterfacer.get_by_id("winner-txt").text = "Player 1 wins!"
+                PyInterfacer.change_focus("victory")
+            elif p2.score == 5:
+                PyInterfacer.get_by_id("winner-txt").text = "Player 2 wins!"
+                PyInterfacer.change_focus("victory")
+        elif score_diff == 1:
+            # If the diff is 1, the score should reset to 0 and the game should continue until the diff is 2, reseting to 0 every time it reaches 2 with a diff of 1. But that would be too much for this example, so i keep it simple: whoever reaches 6 first wins.
+            if p1.score == 6:
+                PyInterfacer.get_by_id("winner-txt").text = "Player 1 wins!"
+                PyInterfacer.change_focus("victory")
+            elif p2.score == 6:
+                PyInterfacer.get_by_id("winner-txt").text = "Player 2 wins!"
+                PyInterfacer.change_focus("victory")            

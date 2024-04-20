@@ -1,4 +1,4 @@
-interface: score-pause
+interface: victory
 background: "#1c1c1c"
 display: default
 styles:
@@ -10,18 +10,18 @@ components:
   - type: text
     id: _
     style: font-style
+    text: "Game Over!"
     x: 50%
     y: 40%
-    text: "Score!"
-    font_size: 128
     bold: true
+    font_size: 128
 
   - type: text
-    id: _
+    id: winner-txt
     style: font-style
     x: 50%
     y: 60%
-    text: Press SPACE
+    text: ""
 
   - type: text-button
     id: leave-btn

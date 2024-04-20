@@ -7,6 +7,9 @@ styles:
     font_color: "#c1c1c1"
     font_size: 32
     bold: true
+  - name: btn-style
+    y: 35
+    focus_color: "#bc9ede"
 components:
   - type: menu-title-button
     id: play-btn
@@ -19,9 +22,16 @@ components:
 
   - type: text-button
     id: exit-btn
-    style: font-style
+    style: [btn-style, font-style]
     x: 95%
     y: 35
     alignment: midright
     text: exit
     focus_color: "#bc9ede"
+
+  - type: text-button
+    id: fullscreen-btn
+    style: [btn-style, font-style]
+    x: 5%
+    alignment: midleft
+    text: fullscreen (f)
