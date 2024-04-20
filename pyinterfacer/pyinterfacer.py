@@ -195,6 +195,9 @@ class PyInterfacer:
         cls.INTERFACES[i.name] = i
         cls.COMPONENTS.update(i.component_dict())
 
+        for c in i.components:
+            c.after_load(i)
+
         # Updates actions for Clickable components
         cls._update_actions()
 

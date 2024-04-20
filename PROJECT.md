@@ -309,6 +309,13 @@ class Interface:
     _style_classes: Dict[str, Dict] # Maps a style class (key) to it's information (value)
     _bindings: List[_ComponentBinding]
 
+    @property
+    def width(self) -> int
+    @property
+    def height(self) -> int
+    @property
+    def components(self) -> List[Component]
+
     # Updates the interface
     def update() -> None
     # Renders the interface
@@ -318,6 +325,9 @@ class Interface:
 
     # Sets the interface background
     def set_background(self, bg: str) -> None
+
+    # Returns a specific type group
+    def get_type_group(self, type_: str) -> Optional[ComponentGroup]
 
     # Returns a dictionary containg the components of the interface, grouped by their 'id'
     def component_dict() -> Dict[str, Component]

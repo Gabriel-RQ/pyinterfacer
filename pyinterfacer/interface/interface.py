@@ -68,6 +68,18 @@ class Interface:
         self._parse_background(background)
         self._parse_components(components)
 
+    @property
+    def width(self) -> int:
+        return self.size[0]
+    
+    @property
+    def height(self) -> int:
+        return self.size[1]
+
+    @property
+    def components(self) -> List[Component]:
+        return self._components
+
     @classmethod
     def set_conversion_tables(
         cls,
@@ -144,7 +156,7 @@ class Interface:
             )
 
             # instantiates a component according to it's type
-            c = Interface.COMPONENT_CONVERSION_TABLE[component["type"].lower()](
+            c: Component = Interface.COMPONENT_CONVERSION_TABLE[component["type"].lower()](
                 **component,
                 interface=self.name,
             )
