@@ -1,4 +1,5 @@
 import pygame
+import pygame._sdl2.controller
 
 from pyinterfacer import PyInterfacer
 from src.setup import setup_interfaces
@@ -44,9 +45,22 @@ class Main:
         paddle_group = PyInterfacer.get_interface("game").get_type_group("paddle")
 
         while self._running:
-            for event in pygame.event.get():
+            for event in pygame.event.get():                
                 if event.type == pygame.QUIT:
                     self._running = False
+                elif event.type == pygame.JOYDEVICEADDED:
+                    self._controller = pygame.Joystick(event.device_index)
+                elif event.type == pygame.JOYDEVICEREMOVED:
+                    self._controller = None
+                elif event.type == pygame.JOYAXISMOTION:
+                    p1 = PyInterfacer.get_by_id("player1")
+                    if event.axis == 1:
+                        if event.value < -0.5:
+                            p1.move("up")
+                        elif event.value > 0.5:
+                            p1.move("down")
+                        else:
+                            p1.stop()
 
                 PyInterfacer.handle_event(event)
 
