@@ -1,9 +1,8 @@
 import pygame
+pygame.init()
 
 from pyinterfacer import PyInterfacer
 from src.setup import setup_interfaces
-
-pygame.init()
 
 
 class Main:
@@ -73,7 +72,7 @@ class Main:
             pygame.display.flip()
             self._dt = self._clock.tick(self._FPS) / 1000
             PyInterfacer.set_delta_time(self._dt)
-
+            
 
 if __name__ == "__main__":
     Main().run()

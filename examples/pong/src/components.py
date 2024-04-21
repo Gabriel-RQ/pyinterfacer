@@ -7,7 +7,13 @@ from pyinterfacer.components import TextButton, Component
 from pyinterfacer.groups import ComponentGroup
 from .particle import ParticleManager
 from typing import Literal
+from os import path
 
+# sound by: Nicolás A. Ortega (Deathsbreed), copyright belongs to the DeathsbreedGames organization (http://deathsbreedgames.github.io/). Source: https://opengameart.org/content/pong-sfx
+pop_sound = pygame.mixer.Sound(path.abspath(path.join("assets", "Pop.ogg")))
+score_sound = pygame.mixer.Sound(path.abspath(path.join("assets", "Score.ogg")))
+pop_sound.set_volume(0.5)
+score_sound.set_volume(0.5)
 
 class MenuTitleButton(TextButton):
     def __init__(self, **kwargs) -> None:
@@ -151,6 +157,13 @@ class Ball(Entity):
 
         pygame.draw.circle(self.image, self.color, self.rect.center, self.radius)
 
+    def _score(self) -> None:
+        score_sound.play()
+        self.reset()
+        self._p1.reset_pos()
+        self._p2.reset_pos()
+        PyInterfacer.change_focus("score-pause")
+
     def update(self) -> None:
         self._align()
 
@@ -170,20 +183,15 @@ class Ball(Entity):
         if self.x < 0:
             self._x_modifier = 1
             self._p2.score += 1
-            self.reset()
-            self._p1.reset_pos()
-            self._p2.reset_pos()
-            PyInterfacer.change_focus("score-pause")
+            self._score()         
         elif self.x > self._interface_instance.width:
             self._x_modifier = -1
             self._p1.score += 1
-            self.reset()
-            self._p1.reset_pos()
-            self._p2.reset_pos()
-            PyInterfacer.change_focus("score-pause")
+            self._score()
 
         collided_paddle: Paddle = self._paddle_group.ball_collided(self)
         if collided_paddle:
+            pop_sound.play()
             # Reflect the ball based on where it hit the paddle
             offset = (self.y - collided_paddle.y) / (
                 (collided_paddle.height + self.diameter) / 2
