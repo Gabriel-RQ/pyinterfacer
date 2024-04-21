@@ -98,9 +98,9 @@ class Paddle(Entity):
         self.image.fill(self.color)
 
         if self._moving["up"]:
-            self.y -= self.speed
+            self.y -= self.speed * PyInterfacer.get_delta_time()
         elif self._moving["down"]:
-            self.y += self.speed
+            self.y += self.speed * PyInterfacer.get_delta_time()
 
         _, height = PyInterfacer.get_interface(self.interface).size
         if (self.y + self.height) < 0:
@@ -155,8 +155,8 @@ class Ball(Entity):
         self._align()
 
         # Ball movement
-        self.x += self._vx * self._x_modifier
-        self.y += self._vy * self._y_modifier
+        self.x += self._vx * self._x_modifier * PyInterfacer.get_delta_time()
+        self.y += self._vy * self._y_modifier * PyInterfacer.get_delta_time()
 
         # Collision detection
         if self.y < 0 or self.y > self._interface_instance.height:
@@ -210,6 +210,7 @@ class Ball(Entity):
             self._particles.spawn_text(random.choice(["Ping!", "Pong!"]), (self.x, self.y))
 
         self._particles.generate(1, self.rect.center, direction_modifier=(self._x_modifier, self._y_modifier), radius_func=lambda: random.uniform(0.75, 1.25))
+
 
 class PaddleGroup(ComponentGroup):
     def ball_collided(self, ball: Ball):

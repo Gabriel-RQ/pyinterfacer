@@ -11,7 +11,7 @@ styles:
     bold: true
   - name: player-style
     color: "#c1c1c1"
-    speed: 3
+    speed: 300
     y: 50%
     height: 75
     width: 15
@@ -45,7 +45,7 @@ components:
   - type: ball
     id: ball
     color: "#c1c1c1"
-    speed: 5
+    speed: 575
     radius: 12
     y: 50%
     x: 50%

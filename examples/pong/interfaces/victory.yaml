@@ -1,5 +1,5 @@
 interface: victory
-background: "#1c1c1c"
+background: "#50a168"
 display: default
 styles:
   - name: font-style

@@ -1,5 +1,4 @@
 import pygame
-import pygame._sdl2.controller
 
 from pyinterfacer import PyInterfacer
 from src.setup import setup_interfaces
@@ -15,6 +14,7 @@ class Main:
         self._display = pygame.display.set_mode(self._size, pygame.SCALED, 32)
 
         self._clock = pygame.time.Clock()
+        self._dt = 0
         self._FPS = 120
 
         self._running = True
@@ -45,7 +45,7 @@ class Main:
         paddle_group = PyInterfacer.get_interface("game").get_type_group("paddle")
 
         while self._running:
-            for event in pygame.event.get():                
+            for event in pygame.event.get():  
                 if event.type == pygame.QUIT:
                     self._running = False
                 elif event.type == pygame.JOYDEVICEADDED:
@@ -61,6 +61,9 @@ class Main:
                             p1.move("down")
                         else:
                             p1.stop()
+                elif event.type == pygame.JOYBUTTONDOWN:
+                    if event.button == 7:
+                        PyInterfacer.change_focus("game")
 
                 PyInterfacer.handle_event(event)
 
@@ -68,7 +71,8 @@ class Main:
             paddle_group.handle_victory()
 
             pygame.display.flip()
-            self._clock.tick(self._FPS)
+            self._dt = self._clock.tick(self._FPS) / 1000
+            PyInterfacer.set_delta_time(self._dt)
 
 
 if __name__ == "__main__":
