@@ -205,10 +205,12 @@ class PyInterfacer:
     _display: pygame.Surface # Where to render everything
     _overlay: OverlayManager # Controls the global overlay surface
     _current_focus: Interface? # Controls the current focused interface
-
+    _delta_time: float = 0
 
     INTERFACES: Dict[str, Interface] # Stores all the interfaces, by their name
     COMPONENTS: Dict[str, Component] # Stores all the components, by their id
+
+    _PAUSED = True
 
     # Stores all the key bindings. Each key represents a pygame key constant.
     _KEY_BINDINGS: Dict[int, Callable] = {}
@@ -222,6 +224,10 @@ class PyInterfacer:
 
     # Configures the display to render to (by default, pygame.display.get_surface())
     def set_display(display: pygame.Surface) -> None
+    # Sets the current delta time
+    def set_delta_time(cls, dt: float) -> None
+    # Returns current delta time
+    def get_delta_time(cls) -> float
 
     # Loads all the interface files in a directory
     def load_all(path: str) -> None
@@ -244,6 +250,11 @@ class PyInterfacer:
     def draw() -> None
     # Updates, draws and handles hover in the currently focused interface
     def handle() -> None
+
+    # Pauses the currently focused interface
+    def pause(cls) -> None
+    # Unpauses the currently focused interface
+    def unpause(cls) -> None
 
     # Changes the focus to the specified interface
     def change_focus(interface: str) -> None

@@ -41,6 +41,7 @@ class PyInterfacer:
     _display: pygame.Surface = None
     _overlay = OverlayManager()
     _current_focus: Optional[Interface] = None
+    _delta_time: float = 0
 
     # Stores all the interfaces. Each key represents an interface name.
     INTERFACES: Dict[str, Interface] = {}
@@ -91,6 +92,22 @@ class PyInterfacer:
         cls._overlay.set_overlay(
             pygame.Surface((cls._display.get_size()), pygame.SRCALPHA).convert_alpha()
         )
+
+    @classmethod
+    def set_delta_time(cls, dt: float) -> None:
+        """
+        Sets the delta time for the current frame.
+
+        :param dt: Delta time.
+        """
+
+        cls._delta_time = dt
+
+    @classmethod
+    def get_delta_time(cls) -> float:
+        """Returns the delta time for the current frame."""
+
+        return cls._delta_time
 
     @classmethod
     def load_all(cls, path: str) -> None:
