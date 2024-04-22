@@ -1,4 +1,5 @@
 import pygame
+
 pygame.init()
 
 from pyinterfacer import PyInterfacer
@@ -9,6 +10,10 @@ class Main:
     def __init__(self) -> None:
         pygame.display.set_caption("Pong")
 
+        self._FULL_SIZE = (
+            pygame.display.Info().current_w,
+            pygame.display.Info().current_h,
+        )
         self._size = self._width, self._height = 800, 600
         self._display = pygame.display.set_mode(self._size, pygame.SCALED, 32)
 
@@ -19,21 +24,28 @@ class Main:
         self._running = True
         self._fullscreen = False
 
-        setup_interfaces(exit_action=self.stop, finish_game=self.finish_game, full_screen=self.full_screen)
+        setup_interfaces(
+            exit_action=self.stop,
+            finish_game=self.finish_game,
+            full_screen=self.full_screen,
+        )
 
     def finish_game(self):
         PyInterfacer.unload()
-        setup_interfaces(exit_action=self.stop, finish_game=self.finish_game, full_screen=self.full_screen)
+        setup_interfaces(
+            exit_action=self.stop,
+            finish_game=self.finish_game,
+            full_screen=self.full_screen,
+        )
 
     def full_screen(self):
         self._fullscreen = not self._fullscreen
-
         if self._fullscreen:
-            self._size = self._width, self._height = pygame.display.get_window_size()
-            self._display = pygame.display.set_mode(self._size, pygame.FULLSCREEN, 32)
+            self._display = pygame.display.set_mode(
+                self._FULL_SIZE, pygame.FULLSCREEN, 32
+            )
         else:
-            self._size = self._width, self._height = 800, 600
-            self._display = pygame.display.set_mode(self._size, pygame.SCALED, 32)
+            self._display = pygame.display.set_mode(self._size, 0, 32)
 
         self.finish_game()
 
@@ -44,7 +56,7 @@ class Main:
         paddle_group = PyInterfacer.get_interface("game").get_type_group("paddle")
 
         while self._running:
-            for event in pygame.event.get():  
+            for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     self._running = False
                 elif event.type == pygame.JOYDEVICEADDED:
@@ -72,7 +84,7 @@ class Main:
             pygame.display.flip()
             self._dt = self._clock.tick(self._FPS) / 1000
             PyInterfacer.set_delta_time(self._dt)
-            
+
 
 if __name__ == "__main__":
     Main().run()
