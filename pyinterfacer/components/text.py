@@ -29,5 +29,5 @@ class Text(Component):
 
     def update(self) -> None:
         self.image = self.font.render(self.text)
-        self.rect = self.image.get_rect()
+        self._set_rect()
         self._align()

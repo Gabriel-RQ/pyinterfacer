@@ -68,7 +68,7 @@ class Button(Clickable, Text, Hoverable):
                     )
 
                 self.image = img
-                self.rect = self.image.get_rect()
+                self._set_rect()
                 self._align()
 
             except:
@@ -83,7 +83,7 @@ class Button(Clickable, Text, Hoverable):
 
         # Otherwise renders a simple button filled with a background color and with text
         self.image = pygame.Surface((self.width, self.height))
-        self.rect = self.image.get_rect()
+        self._set_rect()
         self._align()
 
         # Check if there's background color and border radius

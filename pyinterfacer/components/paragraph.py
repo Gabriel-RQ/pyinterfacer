@@ -41,6 +41,7 @@ class Paragraph(Text):
         max_height = max([line[1].bottom for line in lines])
 
         self.image = pygame.Surface((max_width, max_height), pygame.SRCALPHA)
-        self.rect = self.image.get_rect(center=(self.x, self.y))
+        self._set_rect()
+        self._align()
 
         self.image.blits(self._render_lines())

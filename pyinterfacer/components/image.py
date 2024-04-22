@@ -39,7 +39,7 @@ class Image(Component):
             img.fill("black")
         finally:
             self.image = img
-            self.rect = self.image.get_rect()
+            self._set_rect()
             self._align()
 
     def update(self) -> None:

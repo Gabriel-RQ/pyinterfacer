@@ -47,8 +47,8 @@ class Component(pygame.sprite.Sprite):
         id: str,
         type: str,
         interface: str,
-        x: int,
-        y: int,
+        x: float,
+        y: float,
         width: Optional[int] = 0,
         height: Optional[int] = 0,
         grid_cell: Optional[int] = None,
@@ -80,7 +80,7 @@ class Component(pygame.sprite.Sprite):
         )
 
         self.image = pygame.Surface((self.width, self.height))
-        self.rect = self.image.get_rect()
+        self._set_rect()
 
     def preload_image(self) -> None:
         """
@@ -106,9 +106,12 @@ class Component(pygame.sprite.Sprite):
 
         setattr(self.rect, self.alignment, (self.x, self.y))
 
+    def _set_rect(self) -> None:
+        self.rect = self.image.get_frect()
+
     def update(self) -> None:
         self.image = pygame.Surface((self.width, self.height))
-        self.rect = self.image.get_rect()
+        self._set_rect()
         self._align()
 
     def __repr__(self) -> str:

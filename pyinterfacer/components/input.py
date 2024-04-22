@@ -98,7 +98,7 @@ class Input(Text, Hoverable):
 
     def update(self) -> None:
         self.image = pygame.Surface((self.width, self.height))
-        self.rect = self.image.get_rect()
+        self._set_rect()
         self._align()
 
         # Checks if there is a background color and if the input should have border radius
