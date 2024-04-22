@@ -8,7 +8,8 @@ import os
 
 from ..components import Component
 from ..groups import ComponentGroup, ClickableGroup, HoverableGroup, InputGroup
-from ..util import percent_to_float, OverlayManager
+from ..util import percent_to_float
+from ..util._overlay import _OverlayManager
 from typing import List, Dict, Literal, Optional, Tuple, Callable, Union, overload
 from enum import Enum, auto
 
@@ -40,8 +41,8 @@ class Interface:
         self.size = size
 
         self.surface = pygame.Surface(self.size, pygame.SRCALPHA).convert_alpha()
-        self._overlay = OverlayManager()
-        self._underlayer = OverlayManager()
+        self._overlay = _OverlayManager()
+        self._underlayer = _OverlayManager()
 
         self._overlay.set_overlay(
             pygame.Surface((self.size), pygame.SRCALPHA).convert_alpha()

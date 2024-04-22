@@ -13,12 +13,11 @@ from enum import Enum
 from .interface import Interface
 from .groups import *
 from .components import *
-from .util import OverlayManager
+from .util._overlay import _OverlayManager
+from .util._backup import _BackupManager
 
 
 """
-PROPOSAL: Add a 'reload' method, allowing to completely reload all the interfaces. Could be used when changing resolution, for example.
-
 PROPOSAL: Add a 'when' callback. It should receive a condition, and when it is true, a callback is executed.
 """
 
@@ -27,20 +26,23 @@ class PyInterfacer:
     """PyInterfacer interface manager."""
 
     _display: pygame.Surface = None
-    _overlay = OverlayManager()
+    _overlay = _OverlayManager()
     _current_focus: Optional[Interface] = None
     _delta_time: float = 0
+    _paused = False
+    __backups = _BackupManager()
 
     # Stores all the interfaces. Each key represents an interface name.
     INTERFACES: Dict[str, Interface] = {}
     # Stores all the components. Each key represents an id.
     COMPONENTS: Dict[str, Component] = {}
 
-    _PAUSED = False
-
     # Stores all the key bindings. Each key represents a pygame key constant.
     _KEY_BINDINGS: Dict[int, Callable] = {}
     _KEYUP_BINDINGS: Dict[int, Callable] = {}
+
+    # Maps a component id (key) to an action callback (value). Used to map actions easily for Clickable components
+    _COMPONENT_ACTION_MAPPING: Dict[str, Callable] = {}
 
     # Maps a component type (key) a component class (value). Used to handle conversion from YAML loaded components to their instances
     _COMPONENT_CONVERSION_TABLE: Dict[str, Component] = {
@@ -64,9 +66,6 @@ class PyInterfacer:
         "text-button": ButtonGroup,
         "input": InputGroup,
     }
-
-    # Maps a component id (key) to an action callback (value). Used to map actions easily for Clickable components
-    _COMPONENT_ACTION_MAPPING: Dict[str, Callable] = {}
 
     @classmethod
     def set_display(cls, display: pygame.Surface) -> None:
@@ -136,15 +135,34 @@ class PyInterfacer:
                 cls._parse_interface(interface_dict)
 
     @classmethod
-    def unload(cls) -> None:
+    def unload(cls, backup: bool = False) -> None:
         """
-        Removes all loaded interfaces. Not safe to call while updating or rendering any interface.
+        Removes all loaded interfaces, components, overlays and action mappings.
+
+        :param backup: Whether or not a backup of the current state should be kept.
         """
 
+        if backup:
+            cls.__backups.have_backup = True
+            cls.__backups.focus = cls._current_focus
+            cls.__backups.interfaces = cls.INTERFACES.copy()
+            cls.__backups.components = cls.COMPONENTS.copy()
+
         cls._current_focus = None
-        cls._overlay = None
+        cls._overlay.clear(backup)
         cls.INTERFACES.clear()
         cls.COMPONENTS.clear()
+        cls._COMPONENT_ACTION_MAPPING.clear()
+
+    @classmethod
+    def reload(cls) -> None:
+        """
+        Reloads the previously saved PyInterfacer state. For this to have any effect, the `backup` parameter of `PyInterfacer.unload` must be passed as `True`. Once restored, the backup will be cleared.
+        """
+
+        if cls.__backups.have_backup:
+            cls.__backups.restore(cls)
+            cls.__backups.clear()
 
     @classmethod
     def inject(cls, components: Tuple[Dict[str, Any]], into: str) -> None:
@@ -294,7 +312,7 @@ class PyInterfacer:
         Updates, renders and handles hover events in the currently focused interface.
         """
 
-        if (cls._current_focus is not None) and (not cls._PAUSED):
+        if (cls._current_focus is not None) and (not cls._paused):
             cls.update()
             cls.draw()
             cls.handle_hover()

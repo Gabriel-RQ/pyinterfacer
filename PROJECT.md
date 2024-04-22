@@ -203,14 +203,14 @@ This proposal aims to enhance and simplify what's been defined in the first prop
 # This class handles all the interfaces
 class PyInterfacer:
     _display: pygame.Surface # Where to render everything
-    _overlay: OverlayManager # Controls the global overlay surface
+    _overlay: _OverlayManager # Controls the global overlay surface
     _current_focus: Interface? # Controls the current focused interface
     _delta_time: float = 0
+    _paused: bool
+    __backups: _BackupManager
 
     INTERFACES: Dict[str, Interface] # Stores all the interfaces, by their name
     COMPONENTS: Dict[str, Component] # Stores all the components, by their id
-
-    _PAUSED = True
 
     # Stores all the key bindings. Each key represents a pygame key constant.
     _KEY_BINDINGS: Dict[int, Callable] = {}
@@ -234,7 +234,9 @@ class PyInterfacer:
     # Loads a single interface from a file
     def load(file: str) -> None
     # Unloads all interfaces. Should not be called while still updating or rendering any interface.
-    def unload() -> None
+    def unload(backup: bool = False) -> None
+    # Reloads previously saved PyInterfacer state data.
+    def reload(cls) -> None
 
     # Adds new, custom components to be used in the interface. If 'type_' is the type of an existing component, it will be overridden. The parameter 'components' is a dictionary of 'component types : component classes'
     def add_custom_components(components: Dict[str, Component]) -> None
@@ -307,13 +309,16 @@ class Interface:
     GROUP_COMPONENT_TABLE: Dict[str, ComponentGroup]
 
     name: str
-    display: "default" | "grid"
+    display: "default" | "grid" | "overlay
     rows: int?
     columns: int?
     width: int?
     height: int?
 
     surface: pygame.Surface
+    _overlay: _OverlayManager
+    _underlayer: _OverlayManager
+
     _group: pygame.sprite.Group
     _type_groups: Dict[str, ComponentGroup] # Groups components (values) by type (keys)
     _components: List[Component]

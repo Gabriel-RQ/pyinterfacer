@@ -12,7 +12,7 @@ if typing.TYPE_CHECKING:
     from ..interface import Interface
 
 
-class OverlayManager:
+class _OverlayManager:
     """Simple manager to handle overlays."""
 
     def __init__(self) -> None:
@@ -54,11 +54,15 @@ class OverlayManager:
         """Returns the overlay current opacity."""
         return self._opacity
 
-    def clear(self) -> None:
-        """Clears the overlay surface."""
+    def clear(self, backup: bool = True) -> None:
+        """
+        Clears the overlay surface. Keeps a backup of the last overlay by default.
+
+        :param backup: Whether or not to keep a backup of the last overlay targets.
+        """
 
         # Keeps a copy of the last render targets to restore
-        if any(
+        if backup and any(
             (
                 len(self._render_targets["single"]) > 0,
                 len(self._render_targets["many"]) > 0,
