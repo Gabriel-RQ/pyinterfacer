@@ -12,7 +12,6 @@ if typing.TYPE_CHECKING:
     from ..interface import Interface
 
 
-
 default_component_types = Literal[
     "animation",
     "button",
@@ -91,9 +90,9 @@ class Component(pygame.sprite.Sprite):
 
         pass
 
-    def after_load(self, interface: 'Interface') -> None:
+    def after_load(self, interface: "Interface") -> None:
         """
-        This method is called directly after the component's interface is loaded into the interface, and does nothing by default. This can be used to execute any logic that should be run after the interface and it's components are loaded.
+        This method is called directly after the component's interface is loaded into, and does nothing by default. This can be used to execute any logic that should be run after the interface and it's components are loaded.
 
         :param interface: The interface instance the component was loaded into.
         """
