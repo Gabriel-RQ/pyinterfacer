@@ -12,7 +12,7 @@ Building interfaces for pygame projects can be tiring and cumbersome. PyInterfac
 ```yaml
 interface: <interface name>
 background: <color | path to image>
-display: <default | grid>
+display: <default | grid | overlay>
 styles: <optional list of style classes>
 components: <list of components>
 ```
@@ -21,7 +21,7 @@ Where:
 
 - `interface` is the name of the interface;
 - `background` is an optional attribute that can be either a string representing a color or a path to an image. If it's an image, it gets resized to the display size. Defaults to transparent;
-- `display` is the interface's display type. Either 'grid' or 'default';
+- `display` is the interface's display type. One of 'grid', 'default' or 'overlay';
 - `styles` is a list of style classes, where the attributes can be any accepted by the components. Defined as below:
 
 ```yaml
