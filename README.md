@@ -104,7 +104,7 @@ components:
 
 PyInterfacer relies heavily on pygame sprite groups for handling, rendering and updating all the loaded components effectively. Some utility groups come by default, to help building your interfaces. For example: `Button`'s are added by default on `ButtonGroup`s, which themselves inherit from `ClickableGroup`s and `HoverableGroup`s, allowing handling of clicks and hover events with ease.
 
-PyInterfacer saves all the loaded components in a `generic` group, specific groups for all `interfaces` and even more specific groups for all `types` of components. All of which can be found at `PyInterfacer.GROUPS` dictionary.
+Each interface stores it's components in a generic group, and each component is also stored in a group by their type.
 
 Custom component groups can also be added. Let's consider our previous `HelloWorld` component. Suppose we want it in a new, custom group, for whatever reason. The first thing you should know is: just as components should inherit from `Component`, custom component groups should inherit from `ComponentGroup`. So our group can be made as follows:
 
@@ -129,10 +129,12 @@ PyInterfacer.add_custom_groups({ "hello": HelloWorldGroup })
 This means you can use any custom methods from our custom group, as the groups are stored per component type:
 
 ```py
+interface = PyInterfacer.get_interface("example-interface")
+hello_group = interface.get_type_group("hello")
 while running:
     <pygame events>
 
-    PyInterfacer.GROUPS["types"]["hello"].do_some_magic()
+    hello_group.do_some_magic()
 
     <pygame updates and drawing>
 ```
