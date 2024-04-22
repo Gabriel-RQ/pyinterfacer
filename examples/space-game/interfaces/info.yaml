@@ -6,6 +6,9 @@ styles:
     font: assets/font/space_age.ttf
     font_color: "#c1c1c1"
     font_size: 28
+
+  - name: x-centered
+    x: 50%
 components:
   - type: text-button
     id: info-menu-btn
@@ -15,65 +18,37 @@ components:
     x: 85%
     y: 50
 
-  - type: text
-    id: _
-    style: font-style
-    x: 50%
+  - type: paragraph
+    style: [x-centered, font-style]
     y: 20%
-    text: A 2d space shooting game,
+    lines:
+      [
+        "A 2d space shooting game,",
+        Created as an example,
+        of PyInterfacer capabilities.,
+      ]
+    line_height: 45
 
   - type: text
-    id: _
-    style: font-style
-    x: 50%
-    y: 30%
-    text: Created as an example
-    font_size: 24
-
-  - type: text
-    id: _
-    style: font-style
-    x: 50%
-    y: 35%
-    text: of PyInterfacer capabilities.
-    font_size: 24
-
-  - type: text
-    id: _
-    style: font-style
-    x: 50%
+    style: [x-centered, font-style]
     y: 60%
     text: Made by Gabriel-RQ
     font_size: 22
 
   - type: text
-    id: _
-    style: font-style
-    x: 50%
+    style: [x-centered, font-style]
     y: 70%
     text: Font by Justin Callaghan
     font_size: 22
 
-  - type: text
-    id: _
-    style: font-style
-    x: 50%
-    y: 75%
-    text: https://www.dafont.com/space-age.font
-    font_size: 16
-
-  - type: text
-    id: _
-    style: font-style
-    x: 50%
+  - type: paragraph
+    style: [x-centered, font-style]
     y: 80%
-    text: Laser sound by CHAKONG
     font_size: 16
-
-  - type: text
-    id: _
-    style: font-style
-    x: 50%
-    y: 85%
-    text: Background music by mrpoly
-    font_size: 16
+    lines:
+      [
+        https://www.dafont.com/space-age.font,
+        Laser sound by CHAKONG,
+        Background music by mrpoly,
+      ]
+    line_height: 50

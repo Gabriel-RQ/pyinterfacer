@@ -32,29 +32,24 @@ class Main:
         self.setup_components()
 
     def setup_components(self) -> None:
-        PyInterfacer.get_by_id("menu-start-btn").action = (
-            lambda: PyInterfacer.change_focus("game")
+        PyInterfacer.map_actions(
+            {
+                "menu-start-btn": lambda: PyInterfacer.change_focus("game"),
+                "menu-exit-btn": self.stop,
+                "game-menu-btn": lambda: PyInterfacer.change_focus("menu"),
+                "menu-info-btn": lambda: PyInterfacer.change_focus("info"),
+                "info-menu-btn": lambda: PyInterfacer.change_focus("menu"),
+                "game-over-menu-btn": lambda: PyInterfacer.change_focus("menu"),
+            }
         )
-        PyInterfacer.get_by_id("menu-exit-btn").action = self.stop
-        PyInterfacer.get_by_id("game-menu-btn").action = (
-            lambda: PyInterfacer.change_focus("menu")
-        )
-        PyInterfacer.get_by_id("menu-info-btn").action = (
-            lambda: PyInterfacer.change_focus("info")
-        )
-        PyInterfacer.get_by_id("info-menu-btn").action = (
-            lambda: PyInterfacer.change_focus("menu")
-        )
-        PyInterfacer.get_by_id("game-over-menu-btn").action = (
-            lambda: PyInterfacer.change_focus("menu")
-        )
+
+        PyInterfacer.bind("player", "hp", "player-hp-txt", "text")
 
     def stop(self) -> None:
         self._running = False
 
     def run(self) -> None:
         enemy_spawner: EnemySpawner = PyInterfacer.get_by_id("enemy-spawner")
-        player_hp_txt = PyInterfacer.get_by_id("player-hp-txt")
 
         while self._running:
 
@@ -76,7 +71,6 @@ class Main:
 
             self._player.handle_enemy_hit(enemy_spawner.enemy_group)
             enemy_spawner.handle_player_hit(self._player)
-            player_hp_txt.text = str(self._player.hp)
 
             pygame.display.flip()
             self._dt = self._clock.tick(self._FPS)
