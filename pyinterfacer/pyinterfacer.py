@@ -321,13 +321,13 @@ class PyInterfacer:
     def pause(cls) -> None:
         """Pauses the currently focused interface."""
 
-        cls._PAUSED = True
+        cls._paused = True
 
     @classmethod
     def unpause(cls) -> None:
         """Unpauses the currently focused interface."""
 
-        cls._PAUSED = False
+        cls._paused = False
 
     @overload
     @classmethod
