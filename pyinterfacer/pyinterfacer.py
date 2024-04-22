@@ -8,7 +8,7 @@ import yaml
 import os
 import re
 
-from typing import Optional, Dict, Callable, Union, Tuple, Literal, overload
+from typing import Optional, Dict, Callable, Union, Tuple, Literal, Any, overload
 from enum import Enum
 from .interface import Interface
 from .groups import *
@@ -18,8 +18,6 @@ from .util import OverlayManager
 
 """
 PROPOSAL: Add display type 'overlay' to interfaces. Interfaces with this display type would be rendered into the overlay, effectively being always rendered.
-
-PROPOSAL: Add a way to 'inject' programatically created components into an interface. That would allow to create components when the data needed to create them is dynamic.
 
 PROPOSAL: Add a 'reload' method, allowing to completely reload all the interfaces. Could be used when changing resolution, for example.
 
@@ -159,6 +157,28 @@ class PyInterfacer:
         cls.COMPONENTS.clear()
 
     @classmethod
+    def inject(cls, components: Tuple[Dict[str, Any]], into: str) -> None:
+        """
+        Injects components into an interface. This allows to load programatically created components into any interface at runtime.
+
+        :param components: A tuple of components dictionaries in the format {type: ..., id: ..., attribute: value, ...}.
+        :param into: Interface to load the components into.
+        """
+
+        i = cls.get_interface(into)
+
+        if i is not None:
+            i._parse_components(components)
+            cls.COMPONENTS.update(i.component_dict())
+
+            # Calls 'after load' only for the new, injected components
+            new_ids = tuple(c["id"] for c in components)
+            for comp in filter(lambda c: c.id in new_ids, i.components):
+                comp.after_load(i)
+
+            cls._update_actions()
+
+    @classmethod
     def _parse_interface(cls, interface_dict: Dict):
         """
         Parses a interface file from it's YAML declaration.
@@ -287,7 +307,7 @@ class PyInterfacer:
         """Pauses the currently focused interface."""
 
         cls._PAUSED = True
-    
+
     @classmethod
     def unpause(cls) -> None:
         """Unpauses the currently focused interface."""

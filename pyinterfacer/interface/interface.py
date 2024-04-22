@@ -71,7 +71,7 @@ class Interface:
     @property
     def width(self) -> int:
         return self.size[0]
-    
+
     @property
     def height(self) -> int:
         return self.size[1]
@@ -155,8 +155,14 @@ class Interface:
                 self.columns,
             )
 
+            # Allows not setting any id for components that dont need it
+            if "id" not in component:
+                component["id"] = "_"
+
             # instantiates a component according to it's type
-            c: Component = Interface.COMPONENT_CONVERSION_TABLE[component["type"].lower()](
+            c: Component = Interface.COMPONENT_CONVERSION_TABLE[
+                component["type"].lower()
+            ](
                 **component,
                 interface=self.name,
             )
