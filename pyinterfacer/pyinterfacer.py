@@ -17,19 +17,9 @@ from .util import OverlayManager
 
 
 """
-PROPOSAL: Add display type 'overlay' to interfaces. Interfaces with this display type would be rendered into the overlay, effectively being always rendered.
-
 PROPOSAL: Add a 'reload' method, allowing to completely reload all the interfaces. Could be used when changing resolution, for example.
 
 PROPOSAL: Add a 'when' callback. It should receive a condition, and when it is true, a callback is executed.
-
-TODO: Looks like PyInterfaceer.update() -> Interface.update() -> Component.update() is not setting Component.image when first called (how?). Steps to reproduce:
-    - Run pong example
-    - Let one of the sides score
-    - The game will break: TypeError: Source objects must be a surface
-    - Printing each sprite and it's image attribute in Interface.draw shows that Component.image is None when Pong tries to change focus.
-    - Calling self.update (presumably self.preload_image as well) on the listed components with no image solves the issue.
-OBS: Defined Component.image and Component.rect at the constructor. It fixed the issue. It seems that when PyInterfacer.change_focus is called, the handling of the current focus continue wherever it stoped, instead of restarting through the .update() methods, which can cause it to resume on .draw() when there was no image and rect defined for the Component.
 """
 
 
@@ -190,6 +180,7 @@ class PyInterfacer:
         if "display" not in interface_dict or interface_dict["display"] not in (
             "default",
             "grid",
+            "overlay",
         ):
             raise InvalidDisplayTypeException(interface_dict["interface"])
 
@@ -238,6 +229,9 @@ class PyInterfacer:
         # Updates actions for Clickable components
         cls._update_actions()
 
+        if i.display == "overlay":
+            cls._overlay.add_interface_target(i)
+
     @classmethod
     def add_custom_components(cls, components: Dict[str, Component]) -> None:
         """
@@ -272,11 +266,13 @@ class PyInterfacer:
     @classmethod
     def update(cls) -> None:
         """
-        Updates the currently currently focused interface.
+        Updates the currently currently focused interface and the interfaces in the overlay.
         """
 
         if cls._current_focus is not None:
             cls._current_focus.update()
+
+        cls._overlay.update_interfaces()
 
     @classmethod
     def draw(cls) -> None:
@@ -285,7 +281,8 @@ class PyInterfacer:
         """
 
         if cls._current_focus is not None:
-            cls._current_focus.draw(cls._display)
+            if cls._current_focus.display != "overlay":
+                cls._current_focus.draw(cls._display)
 
         if cls._overlay is not None:
             if (o := cls._overlay.render()) is not None:
@@ -606,7 +603,7 @@ class InvalidInterfaceFileException(Exception):
 class InvalidDisplayTypeException(Exception):
     def __init__(self, interface: str) -> None:
         super().__init__(
-            f"The specified display type for the interface '{interface}' is invalid. It should be either 'default' or 'grid'. Note that grid displays shoud provide 'rows' and 'columns'."
+            f"The specified display type for the interface '{interface}' is invalid. It should be one of 'default', 'grid' or 'overlay'. Note that grid displays shoud provide 'rows' and 'columns'."
         )
 
 

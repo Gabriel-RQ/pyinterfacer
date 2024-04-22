@@ -141,7 +141,7 @@ while running:
 
 # Display types
 
-PyInterfacer allows for two display types to be set by interface: `default` and `grid`.<br>
+PyInterfacer allows for three display types to be set by interface: `default`, `grid` and `overlay`.<br>
 
 ## Default
 
@@ -188,6 +188,10 @@ components:
    height: 80%
    width: auto
 ```
+
+## Overlay
+
+An interface with display type `overlay` works just like an interface with display type `default`, but it is rendered into the global overlay, meaning it will always be rendered.
 
 # Style classes
 

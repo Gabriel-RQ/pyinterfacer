@@ -34,7 +34,7 @@ class Interface:
         styles: Optional[Dict[str, Dict]] = None,
     ) -> None:
         self.name = name
-        self.display = display
+        self.display = display  # display type
         self.rows = rows
         self.columns = columns
         self.size = size
