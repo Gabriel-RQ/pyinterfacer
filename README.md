@@ -474,17 +474,14 @@ SpritesheetAnimation:
 
 ## Bindings
 
+### Component-Component bindings
+
 Some times you may need some component's attribute value to be the same as another component's attribute value, and the changes in the first component's attribute value to be reflected in the second component's attribute value. For example: we have a Player component, with an `hp` attribute, and Text component, with it's `text` attribute; we want the Text component to display the player's current HP, dynamically; instead of manually updating the Text component `text` value to be the same as the Player's component `hp` value, we can bind them both, and let PyInterfacer take care of that.
 
 Here's our example in code:
 
 ```py
-import pygame
-from pyinterfacer import PyInterfacer
-
-pygame.init()
-
-display = pygame.display.set_mode(size, flags, depth)
+<import modules, set display and loads interfaces>
 
 PyInterfacer.load("interface.yaml")
 
@@ -495,18 +492,12 @@ PyInterfacer.bind("player", "hp", "player-hp-txt", "text")
 <handle game loop>
 ```
 
+### Component-Callback bindings
+
 You can also bind a component's attribute value to a callback, instead of another component. The callback will receive the attribute's value, and should return it's updated value. For example:
 
 ```py
-import pygame
-from pyinterfacer import PyInterfacer
-
-pygame.init()
-
-display = pygame.display.set_mode(size, flags, depth)
-clock = pygame.time.Clock()
-
-PyInterfacer.load("interface.yaml")
+<import modules, set display and loads interfaces>
 
 def bind_fps(v):
   return f"FPS: {int(clock.get_fps())}
@@ -514,6 +505,50 @@ def bind_fps(v):
 PyInterfacer.bind("fps-txt", "text", bind_fps)
 
 <handle game loop>
+```
+
+### Condition bindings
+
+Another powerful binding PyInterfacer manages is condition bindings. It allows a callback to be executed when a condition is true, by receiving both a function to check for the condition, and the callback.
+
+The example below changes the display background color every 5 seconds:
+
+```py
+<import modules, set display and loads interfaces>
+
+dt = 0
+counter = 0
+
+PyInterfacer.bind("counter-txt", "text", lambda _: str(round(counter)))
+i = PyInterfacer.get_focused()
+
+colors = ["#e6658c", "#d077ed", "#7779ed", "#77dbed", "#93ed77", "#eddf77", "#ed8377"]
+last_time_change = -1
+
+def change_bg():
+    global last_time_change
+    i.set_background(random.choice(colors))
+    last_time_change = int(counter)
+
+PyInterfacer.when(
+    lambda: int(counter) % 5 == 0 and int(counter) != last_time_change,
+    change_bg,
+    keep=True,
+)
+
+<game loop>
+```
+
+### Keybindings
+
+PyInterfacer also allows a certain key press to be binded to a callback. Look below:
+
+```py
+PyInterfacer.bind_keys({
+  pygame.K_ESCAPE: {"press": lambda: PyInterfacer.change_focus("menu")}
+  pygame.K_w: {"press": lambda: player.move("up"), "release": player.stop}
+  pygame.K_s: {"press": lambda: player.move("down"), "release": player.stop}
+})
 ```
 
 # Examples
