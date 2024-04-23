@@ -124,7 +124,7 @@ class Input(Text, Hoverable):
                 border_radius=self.border_radius,
             )
 
-        txt_surf = self.font.render(
+        txt_surf, _ = self.font.render(
             self.hint if self.hint is not None and not len(self.text) > 0 else self.text
         )
         # offsets the x position of the text if it's wider than the input's width

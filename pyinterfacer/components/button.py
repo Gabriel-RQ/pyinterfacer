@@ -58,12 +58,12 @@ class Button(Clickable, Text, Hoverable):
 
                 # Checks if there's text to be rendered into the button
                 if len(self.text) > 0:
-                    txt_surf = self.font.render(self.text)
+                    txt_surf, txt_rect = self.font.render(self.text)
                     img.blit(
                         txt_surf,
                         (
-                            (img.get_width() - txt_surf.get_width()) // 2,
-                            (img.get_height() - txt_surf.get_height()) // 2,
+                            (img.get_width() - txt_rect.width) // 2,
+                            (img.get_height() - txt_rect.height) // 2,
                         ),
                     )
 
@@ -104,12 +104,12 @@ class Button(Clickable, Text, Hoverable):
         if not self.enabled:
             self.image.set_alpha(self._disabled_bg_alpha)
 
-        txt_surf = self.font.render(self.text)
+        txt_surf, txt_rect = self.font.render(self.text)
         self.image.blit(
             txt_surf,
             (
-                (self.width - txt_surf.get_width()) // 2,
-                (self.height - txt_surf.get_height()) // 2,
+                (self.width - txt_rect.width) // 2,
+                (self.height - txt_rect.height) // 2,
             ),
         )
 

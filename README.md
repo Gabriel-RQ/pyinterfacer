@@ -304,6 +304,7 @@ Text:
   font_color: str?
   bold: bool?
   italic: bool?
+  rotation: int?
   antialias: bool?
   alignment: "center" | "topleft" | "topright" | "midleft" | "midright" | "bottomleft" | "bottomright"
 
@@ -323,6 +324,7 @@ Paragraph:
   font_color: str?
   bold: bool?
   italic: bool?
+  rotation: int?
   antialias: bool?
   lines: List[str] # each string on the list will be rendered in a line
   line_height: int?
@@ -390,6 +392,7 @@ TextButton:
   font_color: str?
   bold: bool?
   italic: bool?
+  rotation: int?
   antialias: bool?
   action: Callable? # this should not be set at the YAML declaration
   enabled: bool?

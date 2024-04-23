@@ -75,6 +75,7 @@ class Text(Component):
     font_color: str? = "#000000",
     bold: bool? = False,
     italic: bool? = False,
+    rotation: int = 0,
     antialias: bool? = True,
 
 

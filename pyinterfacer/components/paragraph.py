@@ -27,10 +27,10 @@ class Paragraph(Text):
 
         # Gets the surfaces and their rects at the right position for the line
         for i, line in enumerate(line_surfs):
-            r = line.get_rect()
+            r = line[1]
             r.y += i * self.line_height
 
-            blit_seq.append((line, r))
+            blit_seq.append((line[0], r))
 
         return blit_seq
 
