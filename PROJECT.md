@@ -279,6 +279,10 @@ class PyInterfacer:
     # Binds a component's attribute to a callback return value (the callback receives the attribute value as a parameter).
     @overload
     def bind(cls, c1: str, a1: str, callback: Callable) -> None
+    # Binds a condition to a callback in the currently focused interface
+    def when(cls, condition: Callable[[None], bool], callback: Callable[[None], None], keep: bool = False) -> None
+    # Binds a keypress to a callback
+    def bind_keys(cls, b: Dict[int, Dict[Literal["release", "press"], Callable]]) -> None
 
     # Maps actions to components, using their id
     def map_actions(cls, actions: Dict[str, Callable]) -> None
@@ -301,9 +305,6 @@ class PyInterfacer:
     # Handles pygame events
     def handle_event(cls, event: pygame.Event) -> None
 
-    # Binds a keypress to a callback
-    def bind_keys(cls, b: Dict[int, Dict[Literal["release", "press"], Callable]]) -> None
-
 # This class handles a single interface
 class Interface:
     COMPONENT_CONVERSION_TABLE: Dict[str, Component]
@@ -324,7 +325,8 @@ class Interface:
     _type_groups: Dict[str, ComponentGroup] # Groups components (values) by type (keys)
     _components: List[Component]
     _style_classes: Dict[str, Dict] # Maps a style class (key) to it's information (value)
-    _bindings: List[_ComponentBinding]
+    _bindings: Dict[str, Union[_ComponentBinding, _ConditionBinding]] = {}
+
 
     @property
     def width(self) -> int
@@ -368,6 +370,8 @@ class Interface:
     # Binds a component's attribute to a callback
     @overload
     def create_binding(self, c1: Component, a1: str, callback: Callable) -> None
+    # Binds a condition to a callback
+    def when(self, condition: Callable[[None], bool], callback: Callable[[None], None], keep: bool = False) -> None
 
     # Adds a single surface to be rendered into the interface's overlay or underlayer
     @overload

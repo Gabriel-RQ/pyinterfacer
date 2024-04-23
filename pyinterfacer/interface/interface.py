@@ -5,13 +5,18 @@
 
 import pygame
 import os
+import typing
 
 from ..components import Component
 from ..groups import ComponentGroup, ClickableGroup, HoverableGroup, InputGroup
 from ..util import percent_to_float
 from ..util._overlay import _OverlayManager
+from ..util._bindings import _ComponentBinding, _ConditionBinding
 from typing import List, Dict, Literal, Optional, Tuple, Callable, Union, overload
 from enum import Enum, auto
+
+if typing.TYPE_CHECKING:
+    from uuid import UUID
 
 
 class RenderLayer(Enum):
@@ -62,9 +67,9 @@ class Interface:
 
         self._components: List[Component] = []
         self._style_classes = styles
-        self._bindings: List[_ComponentBinding] = (
-            []
-        )  # A list of bindings used to bind components to each other. Called when updating the interface.
+        self._bindings: Dict[str, Union[_ComponentBinding, _ConditionBinding]] = (
+            {}
+        )  # A mapping of bindings, used to bind components to each other and conditions to callbacks. Called when updating the interface.
 
         self._parse_background(background)
         self._parse_components(components)
@@ -305,8 +310,10 @@ class Interface:
 
         # Update bindings
         if len(self._bindings) > 0:
-            for binding in self._bindings:
-                binding.handle()
+            for binding in self._bindings.copy().values():
+                # Checks if the binding needs to be unregistered
+                if (id_ := binding.handle()) is not None:
+                    binding.unregister(id_, self._bindings)
 
     def draw(self, surface: pygame.Surface) -> None:
         """
@@ -435,12 +442,31 @@ class Interface:
         if isinstance(c2, Component) and a2 is not None:
             b = _ComponentBinding("component")
             b.set_component_binding((c1, a1), (c2, a2))
-            self._bindings.append(b)
         elif callable(c2):
             b = _ComponentBinding("callback")
             b.set_callback_binding((c1, a1), c2)
 
-            self._bindings.append(b)
+        self._bindings[b.identifier] = b
+
+    def when(
+        self,
+        condition: Callable[[None], bool],
+        callback: Callable[[None], None],
+        *,
+        keep: bool = False,
+    ) -> "UUID":
+        """
+        Binds a condition to a callback.
+
+        :param condition: A function that returns a boolean indicating if the condition is met or not.
+        :param callback: A function that is executed when the condition is met.
+        :param keep: Wether to keep the binding after the condition is first met or not.
+        """
+
+        b = _ConditionBinding(condition, callback, keep)
+        self._bindings[b.identifier] = b
+
+        return b.identifier
 
     @overload
     def add_to_layer(
@@ -525,64 +551,3 @@ class Interface:
             self._overlay.restore()
         elif layer == RenderLayer.UNDERLAYER:
             self._underlayer.restore()
-
-
-class _ComponentBinding:
-    def __init__(self, type_: Literal["component", "callback"]) -> None:
-        self._type = type_
-        self._callback: Callable = None
-
-        self._from_component: Component = None
-        self._to_component: Component = None
-        self._from_attr: str = None
-        self._to_attr: str = None
-
-    def set_component_binding(
-        self, from_: Tuple[Component, str], to: Tuple[Component, str]
-    ) -> None:
-        """
-        Sets the configuration for a component to component binding.
-
-        :param from_: Tuple where the first index is the Component instance and the second index the component's attribute.
-        :param to: Tuple where the first index is the Component instance  and the second index the component's attribute to bind to.
-        """
-
-        self._from_component = from_[0]
-        self._from_attr = from_[1]
-        self._to_component = to[0]
-        self._to_attr = to[1]
-
-    def set_callback_binding(
-        self, from_: Tuple[Component, str], callback: Callable
-    ) -> None:
-        """
-        Sets a configuration for a component to callback binding.
-
-        :param from_: Tuple where the first index is the Component instance and the second index the component's attribute.
-        :parma callback: Callback to bind the attribute to.
-        """
-
-        self._to_component = from_[0]
-        self._to_attr = from_[1]
-        self._callback = callback
-
-    def handle(self) -> None:
-        """
-        Handles the binding operation. Commonly called at the `Interface.update`.
-        """
-
-        if self._type == "component":
-            # the binding must convert the value to the type of the attribute it's binding to
-            to_type = type(getattr(self._to_component, self._to_attr))
-            setattr(
-                self._to_component,
-                self._to_attr,
-                to_type(getattr(self._from_component, self._from_attr)),
-            )
-        elif self._type == "callback":
-            # it will set the attribute value to it's updated version, returned by the callback
-            setattr(
-                self._to_component,
-                self._to_attr,
-                self._callback(getattr(self._to_component, self._to_attr)),
-            )

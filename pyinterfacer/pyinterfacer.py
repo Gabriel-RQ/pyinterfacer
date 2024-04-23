@@ -18,7 +18,9 @@ from .util._backup import _BackupManager
 
 
 """
-PROPOSAL: Add a 'when' callback. It should receive a condition, and when it is true, a callback is executed.
+PROPOSAL: Add an 'after' method. It should receive an amount of time and a callback to be executed after the time is reached.
+
+PROPOSAL: Add a 'dump' or 'export' method that stores all the data needed to reload the current interface to one single external file.
 """
 
 
@@ -462,25 +464,6 @@ class PyInterfacer:
             cls._current_focus.emit_input(event)
 
     @classmethod
-    def bind_keys(
-        cls, b: Dict[int, Dict[Literal["press", "release"], Callable]]
-    ) -> None:
-        """
-        Binds a keypress to a callback.
-
-        :param b: A mapping where the keys are integers (pygame key constants) and the values are dictionaries in the format {"press": Callback?, "release": Callback?}. At least one of the callbacks should be provided.
-        """
-
-        for k, v in b.items():
-            if not isinstance(v, dict):
-                continue
-
-            if "press" in v and callable((d := v["press"])):
-                cls._KEY_BINDINGS[k] = d
-            if "release" in v and callable((u := v["release"])):
-                cls._KEYUP_BINDINGS[k] = u
-
-    @classmethod
     def handle_event(cls, event: pygame.Event) -> None:
         """
         Handles pygame events. This let's PyInterfacer handle it's Clickable and Input components, for example.
@@ -562,6 +545,44 @@ class PyInterfacer:
 
                 if i is not None:
                     i.create_binding(cls.COMPONENTS[c1], a1, c2)
+
+    @classmethod
+    def bind_keys(
+        cls, b: Dict[int, Dict[Literal["press", "release"], Callable]]
+    ) -> None:
+        """
+        Binds a keypress to a callback.
+
+        :param b: A mapping where the keys are integers (pygame key constants) and the values are dictionaries in the format {"press": Callback?, "release": Callback?}. At least one of the callbacks should be provided.
+        """
+
+        for k, v in b.items():
+            if not isinstance(v, dict):
+                continue
+
+            if "press" in v and callable((d := v["press"])):
+                cls._KEY_BINDINGS[k] = d
+            if "release" in v and callable((u := v["release"])):
+                cls._KEYUP_BINDINGS[k] = u
+
+    @classmethod
+    def when(
+        cls,
+        condition: Callable[[None], bool],
+        callback: Callable[[None], None],
+        *,
+        keep: bool = False,
+    ):
+        """
+        Binds a condition to a callback in the currently focused interface through `Interface.when`. This is handled at interface level.
+
+        :param condition: A function that returns a boolean indicating if the condition is met or not.
+        :param callback: A function that is executed when the condition is met.
+        :param keep: Wether to keep the binding after the condition is first met or not.
+        """
+
+        if cls._current_focus is not None:
+            return cls._current_focus.when(condition, callback, keep=keep)
 
     @classmethod
     def map_actions(cls, actions: Dict[str, Callable]) -> None:
