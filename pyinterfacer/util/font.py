@@ -4,57 +4,107 @@
 """
 
 import pygame
+import pygame.freetype
 import string
+
+from typing import Optional, Union, Tuple
+
+_Color = Union[pygame.Color, str, Tuple[int, int, int]]
 
 
 class Font:
-    """Stores font information and handles text rendering."""
+    """Stores font information and handles text rendering. Uses the pygame.freetype module."""
 
     def __init__(
         self,
-        font: str,
-        font_size: int,
-        font_color: str,
-        bold: bool,
-        italic: bool,
-        antialias: bool,
-    ):
-        self.font_size = font_size
-        self.font_color = font_color
-        self.bold = bold
-        self.italic = italic
-        self.antialias = antialias
-
+        name: Optional[str] = None,
+        size: int = 14,
+        color: Optional[_Color] = None,
+        bold: bool = False,
+        italic: bool = False,
+        rotation: int = 0,
+        antialiased: bool = True,
+    ) -> None:
         try:
-            # Tries to load the specified font as a sys font
-            f = "".join(font.lower().strip().split(" ")).translate(
+            # Removes punctation from the font name and tries to load it as a system font
+            f = "".join(name.lower().strip().split(" ")).translate(
                 str.maketrans("", "", string.punctuation)
             )
             if f in pygame.font.get_fonts():
-                self.font = pygame.font.SysFont(
+                self._font = pygame.freetype.SysFont(
                     name=f,
-                    size=self.font_size,
-                    bold=self.bold,
-                    italic=self.italic,
+                    size=size,
+                    bold=bold,
+                    italic=italic,
                 )
             else:
-                # otherwise tries to load it from a file
-                self.font = pygame.font.Font(filename=font, size=self.font_size)
-                self.font.set_bold(self.bold)
-                self.font.set_italic(self.italic)
+                self._font = pygame.freetype.Font(file=name, size=size)
+                self._font.strong = bold
+                self._font.oblique = italic
         except:
-            # if none work, load pygame's default font instead
-            self.font = pygame.font.SysFont(
-                name=pygame.font.match_font(
-                    pygame.font.get_default_font(),
-                    bold=self.bold,
-                    italic=self.italic,
-                ),
-                size=self.font_size,
-                bold=self.bold,
-                italic=self.italic,
-            )
+            self._font = pygame.freetype.SysFont(None, size, bold, italic)
 
-    def render(self, text: str) -> pygame.surface.Surface:
-        """Renders text using the font to a surface and returns it."""
-        return self.font.render(text, antialias=self.antialias, color=self.font_color)
+        self._font.antialiased = antialiased
+        self._font.fgcolor = pygame.Color(color)
+        self._font.rotation = rotation
+
+    @property
+    def size(self) -> int:
+        return self._font.size
+
+    @size.setter
+    def size(self, s: int) -> None:
+        self._font.size = s
+
+    @property
+    def color(self) -> pygame.Color:
+        return self._font.fgcolor
+
+    @color.setter
+    def color(self, c: _Color) -> None:
+        self._font.fgcolor = pygame.Color(c)
+
+    @property
+    def bold(self) -> bool:
+        return self._font.strong
+
+    @bold.setter
+    def bold(self, b: bool) -> None:
+        self._font.strong = b
+
+    @property
+    def italic(self) -> bool:
+        return self._font.oblique
+
+    @italic.setter
+    def italic(self, i: bool) -> None:
+        self._font.oblique = i
+
+    @property
+    def rotation(self) -> int:
+        return self._font.rotation
+
+    @rotation.setter
+    def rotation(self, r: int) -> None:
+        self._font.rotation = r
+
+    @property
+    def antialiased(self) -> bool:
+        return self._font.antialiased
+
+    @antialiased.setter
+    def antialiased(self, aa: bool) -> None:
+        self._font.antialiased = aa
+
+    def render(
+        self,
+        text: str,
+        fg: Optional[_Color] = None,
+        bg: Optional[_Color] = None,
+        rotation: Optional[int] = None,
+    ) -> Tuple[pygame.Surface, pygame.Rect]:
+        """Renders text and returns it's surface and rect."""
+
+        return self._font.render(
+            text, fgcolor=fg, bgcolor=bg, rotation=(rotation or self.rotation)
+        )
