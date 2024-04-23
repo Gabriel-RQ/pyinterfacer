@@ -17,7 +17,7 @@ class Paragraph(Text):
 
         self.lines = lines
         self.line_height = (
-            line_height if line_height is not None else self.font.font_size * 0.75
+            line_height if line_height is not None else self.font.size * 0.75
         )
 
     def _render_lines(self) -> None:
