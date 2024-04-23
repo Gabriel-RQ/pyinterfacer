@@ -62,17 +62,24 @@ class TextParticle(pygame.sprite.Sprite):
         self.text = text
         self._font_size = 32
 
-        self._angle = random.uniform(-45, 45)
-        self.font = Font("Arial", 24, self.color, bold=True, italic=False, antialias=True)
+        self._angle = random.randint(-45, 45)
+        self.font = Font(
+            "Arial",
+            24,
+            self.color,
+            bold=True,
+            italic=False,
+            antialiased=True,
+            rotation=self._angle,
+        )
 
         self._x_modifier = random.choice([-1, 1])
         self._y_modifier = 0
 
         self._scale_modifier = random.uniform(0.75, 1.25)
-        
-    
+
     def update(self) -> None:
-        self.image = pygame.transform.rotate(self.font.render(self.text), self._angle)
+        self.image, _ = self.font.render(self.text)
         self.image = pygame.transform.smoothscale_by(self.image, self._scale_modifier)
         self.rect = self.image.get_rect(center=(self.x, self.y))
 
@@ -82,7 +89,6 @@ class TextParticle(pygame.sprite.Sprite):
 
         self._scale_modifier -= 0.0075
         self._scale_modifier = max(0, self._scale_modifier)
-
 
 
 class ParticleGroup(pygame.sprite.Group):
@@ -153,5 +159,3 @@ class ParticleManager:
     def handle(self, display: pygame.Surface) -> None:
         self._particles.draw(display)
         self._particles.update()
-
-
