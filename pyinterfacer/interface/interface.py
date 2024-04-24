@@ -408,7 +408,7 @@ class Interface:
             self._subgroups.append(group)
 
     @overload
-    def create_binding(self, c1: Component, a1: str, c2: Component, a2: str) -> None:
+    def create_binding(self, c1: Component, a1: str, c2: Component, a2: str):
         """
         Creates a binding between two components. When the first component's attribute changes, the second component's attribute will be updated to match it.
 
@@ -421,7 +421,7 @@ class Interface:
         ...
 
     @overload
-    def create_binding(self, c1: Component, a1: str, callback: Callable) -> None:
+    def create_binding(self, c1: Component, a1: str, callback: Callable):
         """
         Creates a binding between a component and a callback. The component's attribute will be constantly updated to match the callback return value.
 
@@ -438,7 +438,7 @@ class Interface:
         a1: str,
         c2: Union[Component, Callable],
         a2: Optional[str] = None,
-    ) -> None:
+    ) -> "UUID":
         if isinstance(c2, Component) and a2 is not None:
             b = _ComponentBinding("component")
             b.set_component_binding((c1, a1), (c2, a2))
@@ -447,6 +447,7 @@ class Interface:
             b.set_callback_binding((c1, a1), c2)
 
         self._bindings[b.identifier] = b
+        return b.identifier
 
     def when(
         self,

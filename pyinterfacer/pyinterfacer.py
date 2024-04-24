@@ -20,7 +20,13 @@ from .util._backup import _BackupManager
 """
 PROPOSAL: Add an 'after' method. It should receive an amount of time and a callback to be executed after the time is reached.
 
+PROPOSAL: Add a 'remove' method to remove components from an interface. Could be used to remove components that are no longer needed.
+
+PROPOSAL: Add method to remove bindings (using their id, returned from bind methods)
+
 PROPOSAL: Add a 'dump' or 'export' method that stores all the data needed to reload the current interface to one single external file.
+
+PROPOSAL: Start passing *args and **kwargs to components update methods.
 """
 
 
@@ -502,7 +508,7 @@ class PyInterfacer:
 
     @overload
     @classmethod
-    def bind(cls, c1: str, a1: str, c2: str, a2: str) -> None:
+    def bind(cls, c1: str, a1: str, c2: str, a2: str):
         """
         Binds a component attribute to another component attribute.
 
@@ -516,7 +522,7 @@ class PyInterfacer:
 
     @overload
     @classmethod
-    def bind(cls, c1: str, a1: str, callback: Callable) -> None:
+    def bind(cls, c1: str, a1: str, callback: Callable):
         """
         Binds a component attribute to a callback. The callback will receive the attribute value, and should return it's updated value.
 
@@ -530,21 +536,21 @@ class PyInterfacer:
     @classmethod
     def bind(
         cls, c1: str, a1: str, c2: Union[str, Callable], a2: Optional[str] = None
-    ) -> None:
+    ):
         if isinstance(c2, str) and a2 is not None:
             if c1 in cls.COMPONENTS and c2 in cls.COMPONENTS:
                 # binding is done at interface level
                 i = cls.get_interface(cls.COMPONENTS[c1].interface)
 
                 if i is not None:
-                    i.create_binding(cls.COMPONENTS[c1], a1, cls.COMPONENTS[c2], a2)
+                    return i.create_binding(cls.COMPONENTS[c1], a1, cls.COMPONENTS[c2], a2)
         elif callable(c2):
 
             if c1 in cls.COMPONENTS:
                 i = cls.get_interface(cls.COMPONENTS[c1].interface)
 
                 if i is not None:
-                    i.create_binding(cls.COMPONENTS[c1], a1, c2)
+                    return i.create_binding(cls.COMPONENTS[c1], a1, c2)
 
     @classmethod
     def bind_keys(
@@ -572,16 +578,23 @@ class PyInterfacer:
         callback: Callable[[None], None],
         *,
         keep: bool = False,
+        interface: Optional[str] = None,
     ):
         """
-        Binds a condition to a callback in the currently focused interface through `Interface.when`. This is handled at interface level.
+        Binds a condition to a callback in the currently focused interface, or in the specified interface, through `Interface.when`. This is handled at interface level.
 
         :param condition: A function that returns a boolean indicating if the condition is met or not.
         :param callback: A function that is executed when the condition is met.
         :param keep: Wether to keep the binding after the condition is first met or not.
+        :param interface: The interface in which to perform the binding. If not provided, the binding will be set in the focused interface.
         """
 
-        if cls._current_focus is not None:
+        if interface is not None:
+            i = cls.get_interface(interface)
+        else:
+            i = cls._current_focus
+
+        if i is not None:
             return cls._current_focus.when(condition, callback, keep=keep)
 
     @classmethod
