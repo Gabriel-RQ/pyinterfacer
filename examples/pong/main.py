@@ -3,7 +3,7 @@ import pygame
 pygame.init()
 
 from pyinterfacer import PyInterfacer
-from src.setup import setup_interfaces
+from src.setup import setup_interfaces, setup_bindings
 
 
 class Main:
@@ -47,7 +47,9 @@ class Main:
         else:
             self._display = pygame.display.set_mode(self._size, 0, 32)
 
-        self.finish_game()
+        PyInterfacer.unload(backup=True)
+        PyInterfacer.reload(raw=True)
+        setup_bindings(finish_game=self.finish_game, full_screen=self.full_screen)
 
     def stop(self):
         self._running = False

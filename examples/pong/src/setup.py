@@ -6,21 +6,10 @@ from typing import Callable
 from .components import *
 
 
-def setup_interfaces(exit_action: Callable, finish_game: Callable, full_screen: Callable):
-    # Setup custom components and groups
-    PyInterfacer.add_custom_components(
-        {
-            "menu-title-button": MenuTitleButton,
-            "paddle": Paddle,
-            "dotted-line": DottedLine,
-            "ball": Ball,
-        }
-    )
-    PyInterfacer.add_custom_groups(
-        {
-            "paddle": PaddleGroup,
-        }
-    )
+def setup_interfaces(
+    exit_action: Callable, finish_game: Callable, full_screen: Callable
+):
+    setup_custom_components()
 
     # Setup component actions
     PyInterfacer.map_actions(
@@ -35,6 +24,26 @@ def setup_interfaces(exit_action: Callable, finish_game: Callable, full_screen: 
     PyInterfacer.load_all(os.path.abspath("interfaces/"))
     PyInterfacer.change_focus("menu")
 
+    setup_bindings(finish_game, full_screen)
+
+
+def setup_custom_components() -> None:
+    PyInterfacer.add_custom_components(
+        {
+            "menu-title-button": MenuTitleButton,
+            "paddle": Paddle,
+            "dotted-line": DottedLine,
+            "ball": Ball,
+        }
+    )
+    PyInterfacer.add_custom_groups(
+        {
+            "paddle": PaddleGroup,
+        }
+    )
+
+
+def setup_bindings(finish_game, full_screen) -> None:
     # Setup keybindings
     player1: Paddle = PyInterfacer.get_by_id("player1")
     player2: Paddle = PyInterfacer.get_by_id("player2")
@@ -63,5 +72,8 @@ def setup_interfaces(exit_action: Callable, finish_game: Callable, full_screen: 
 
 
 def unpause_after_score():
-    if (f := PyInterfacer.get_focused()) is not None and f.name not in ("menu", "victory"):
+    if (f := PyInterfacer.get_focused()) is not None and f.name not in (
+        "menu",
+        "victory",
+    ):
         PyInterfacer.change_focus("game")

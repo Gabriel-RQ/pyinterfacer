@@ -15,6 +15,7 @@ score_sound = pygame.mixer.Sound(path.abspath(path.join("assets", "Score.ogg")))
 pop_sound.set_volume(0.5)
 score_sound.set_volume(0.5)
 
+
 class MenuTitleButton(TextButton):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -130,7 +131,6 @@ class Ball(Entity):
 
         self._particles = ParticleManager(color=self.color)
 
-
         self.preload_image()
 
     def after_load(self, interface) -> None:
@@ -141,10 +141,10 @@ class Ball(Entity):
 
         # adds the particles to be rendered
         interface.add_subgroup(self._particles.group)
-        
+
     def reset(self) -> None:
         self.x = self._interface_instance.width // 2
-        self.y =  self._interface_instance.height // 2
+        self.y = self._interface_instance.height // 2
 
         self._vx = self.speed
         self._vy = self.speed
@@ -183,7 +183,7 @@ class Ball(Entity):
         if self.x < 0:
             self._x_modifier = 1
             self._p2.score += 1
-            self._score()         
+            self._score()
         elif self.x > self._interface_instance.width:
             self._x_modifier = -1
             self._p1.score += 1
@@ -215,9 +215,16 @@ class Ball(Entity):
                 where=(collided_paddle.x, collided_paddle.y),
                 direction_modifier=(self._x_modifier, 0),
             )
-            self._particles.spawn_text(random.choice(["Ping!", "Pong!"]), (self.x, self.y))
+            self._particles.spawn_text(
+                random.choice(["Ping!", "Pong!"]), (self.x, self.y)
+            )
 
-        self._particles.generate(1, self.rect.center, direction_modifier=(self._x_modifier, self._y_modifier), radius_func=lambda: random.uniform(0.75, 1.25))
+        self._particles.generate(
+            1,
+            self.rect.center,
+            direction_modifier=(self._x_modifier, self._y_modifier),
+            radius_func=lambda: random.uniform(0.75, 1.25),
+        )
 
 
 class PaddleGroup(ComponentGroup):
@@ -225,10 +232,13 @@ class PaddleGroup(ComponentGroup):
         """Returns the paddle the ball collided with."""
 
         return pygame.sprite.spritecollideany(ball, self)
-    
+
     def handle_victory(self) -> None:
         p1: Paddle = PyInterfacer.get_by_id("player1")
         p2: Paddle = PyInterfacer.get_by_id("player2")
+
+        if p1 is None or p2 is None:
+            return
 
         score_diff = abs(p1.score - p2.score)
 
@@ -246,4 +256,4 @@ class PaddleGroup(ComponentGroup):
                 PyInterfacer.change_focus("victory")
             elif p2.score == 6:
                 PyInterfacer.get_by_id("winner-txt").text = "Player 2 wins!"
-                PyInterfacer.change_focus("victory")            
+                PyInterfacer.change_focus("victory")
