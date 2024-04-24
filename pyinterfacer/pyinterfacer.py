@@ -20,9 +20,10 @@ from .util._backup import _BackupManager
 """
 PROPOSAL: Add an 'after' method. It should receive an amount of time and a callback to be executed after the time is reached.
 
-PROPOSAL: Add method to remove bindings (using their id, returned from bind methods)
-
 PROPOSAL: Add a 'dump' or 'export' method that stores all the data needed to reload the current interface to one single external file.
+Could maybe use the saved file locations on _BackupManager, load the interfaces and pickle them.
+
+PROPOSA: Enhance the keybindings system using the existing binding management, and save the id of each component binding, allowing it to be reloaded with _BackupManager.reload.
 
 PROPOSAL: Start passing *args and **kwargs to components update methods.
 """
@@ -139,6 +140,7 @@ class PyInterfacer:
                     raise InvalidInterfaceFileException()
 
                 cls._parse_interface(interface_dict)
+                cls.__backups.remember_interface_file(file)
 
     @classmethod
     def unload(cls, backup: bool = False) -> None:
@@ -150,9 +152,10 @@ class PyInterfacer:
 
         if backup:
             cls.__backups.have_backup = True
-            cls.__backups.focus = cls._current_focus
+            cls.__backups.focus = cls._current_focus.name
             cls.__backups.interfaces = cls.INTERFACES.copy()
             cls.__backups.components = cls.COMPONENTS.copy()
+            cls.__backups.actions = cls._COMPONENT_ACTION_MAPPING.copy()
 
         cls._current_focus = None
         cls._overlay.clear(backup)
@@ -161,13 +164,15 @@ class PyInterfacer:
         cls._COMPONENT_ACTION_MAPPING.clear()
 
     @classmethod
-    def reload(cls) -> None:
+    def reload(cls, raw: bool = False) -> None:
         """
         Reloads the previously saved PyInterfacer state. For this to have any effect, the `backup` parameter of `PyInterfacer.unload` must be passed as `True`. Once restored, the backup will be cleared.
+
+        :param raw: Wheter or not the interfaces should be restored from previous state, or reloaded from the data loaded from YAML declaration.
         """
 
         if cls.__backups.have_backup:
-            cls.__backups.restore(cls)
+            cls.__backups.restore(cls, raw)
             cls.__backups.clear()
 
     @classmethod
@@ -303,6 +308,9 @@ class PyInterfacer:
         """
         Draws the currently focused interface to the display.
         """
+
+        if cls._display is None:
+            return
 
         if cls._current_focus is not None:
             if cls._current_focus.display != "overlay":
