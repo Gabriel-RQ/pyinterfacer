@@ -552,3 +552,13 @@ class Interface:
             self._overlay.restore()
         elif layer == RenderLayer.UNDERLAYER:
             self._underlayer.restore()
+
+    def _remove_component(self, c: Component) -> None:
+        """
+        Removes a component from the interface.
+
+        :param c: Component instance.
+        """
+
+        c.kill()
+        self.components.remove(c)

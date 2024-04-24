@@ -20,8 +20,6 @@ from .util._backup import _BackupManager
 """
 PROPOSAL: Add an 'after' method. It should receive an amount of time and a callback to be executed after the time is reached.
 
-PROPOSAL: Add a 'remove' method to remove components from an interface. Could be used to remove components that are no longer needed.
-
 PROPOSAL: Add method to remove bindings (using their id, returned from bind methods)
 
 PROPOSAL: Add a 'dump' or 'export' method that stores all the data needed to reload the current interface to one single external file.
@@ -534,16 +532,16 @@ class PyInterfacer:
         ...
 
     @classmethod
-    def bind(
-        cls, c1: str, a1: str, c2: Union[str, Callable], a2: Optional[str] = None
-    ):
+    def bind(cls, c1: str, a1: str, c2: Union[str, Callable], a2: Optional[str] = None):
         if isinstance(c2, str) and a2 is not None:
             if c1 in cls.COMPONENTS and c2 in cls.COMPONENTS:
                 # binding is done at interface level
                 i = cls.get_interface(cls.COMPONENTS[c1].interface)
 
                 if i is not None:
-                    return i.create_binding(cls.COMPONENTS[c1], a1, cls.COMPONENTS[c2], a2)
+                    return i.create_binding(
+                        cls.COMPONENTS[c1], a1, cls.COMPONENTS[c2], a2
+                    )
         elif callable(c2):
 
             if c1 in cls.COMPONENTS:
@@ -622,6 +620,21 @@ class PyInterfacer:
 
             if isinstance(c, Clickable):
                 c.action = cls._COMPONENT_ACTION_MAPPING[id_]
+
+    @classmethod
+    def remove_component(cls, id_: str) -> None:
+        """
+        Removes the specified component from the interface.
+
+        :param id_: The component's id.
+        """
+
+        c = cls.COMPONENTS.get(id_)
+
+        if c is not None:
+            i = cls.INTERFACES.get(c.interface)
+            i._remove_component(c)
+            del cls.COMPONENTS[id_]
 
 
 class DefaultComponentTypes(Enum):
