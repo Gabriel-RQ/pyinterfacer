@@ -514,6 +514,7 @@ class PyInterfacer:
         :param a1: Attribute of the component to bind.
         :param c2: ID of the component to bind to.
         :param a2: Attribute of the component to bind to.
+        :return: The binding id.
         """
 
         ...
@@ -527,6 +528,7 @@ class PyInterfacer:
         :param c1: ID of the component to bind.
         :param a1: Attribute of the component to bind.
         :param callback: Callback function that returns the value for the attribute.
+        :return: The binding id.
         """
 
         ...

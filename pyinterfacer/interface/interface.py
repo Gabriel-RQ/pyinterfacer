@@ -408,7 +408,7 @@ class Interface:
             self._subgroups.append(group)
 
     @overload
-    def create_binding(self, c1: Component, a1: str, c2: Component, a2: str):
+    def create_binding(self, c1: Component, a1: str, c2: Component, a2: str) -> "UUID":
         """
         Creates a binding between two components. When the first component's attribute changes, the second component's attribute will be updated to match it.
 
@@ -416,18 +416,20 @@ class Interface:
         :param a1: Attribute of component 1.
         :param c2: Component to bind to.
         :param a2: Attribute of component 2.
+        :return: The binding id.
         """
 
         ...
 
     @overload
-    def create_binding(self, c1: Component, a1: str, callback: Callable):
+    def create_binding(self, c1: Component, a1: str, callback: Callable) -> "UUID":
         """
         Creates a binding between a component and a callback. The component's attribute will be constantly updated to match the callback return value.
 
         :param c1: Component to bind.
         :param a1: Attribute of the component.
         :param callback: Callback function that return the attribute updated value.
+        :return: The binding id.
         """
 
         ...
@@ -449,6 +451,19 @@ class Interface:
         self._bindings[b.identifier] = b
         return b.identifier
 
+    def unbind(self, id_: "UUID") -> None:
+        """
+        Removes the binding with the provided `id`, if it exists.
+
+        :param id_: Binding id.
+        """
+
+        b = self._bindings.get(id_)
+
+        if b is not None:
+            print("ain ain")
+            b.unregister(id_, self._bindings)
+
     def when(
         self,
         condition: Callable[[None], bool],
@@ -462,6 +477,7 @@ class Interface:
         :param condition: A function that returns a boolean indicating if the condition is met or not.
         :param callback: A function that is executed when the condition is met.
         :param keep: Wether to keep the binding after the condition is first met or not.
+        :return: The binding id.
         """
 
         b = _ConditionBinding(condition, callback, keep)
