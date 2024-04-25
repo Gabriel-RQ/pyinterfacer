@@ -23,10 +23,10 @@ PROPOSAL: Add an 'after' method. It should receive an amount of time and a callb
 
 PROPOSAL: Add a 'parent' attribute to interfaces with display type 'overlay', allowing to set them as overlays to another interface, instead of just global overlays.
 
-PROPOSAL: Add a 'dump' or 'export' method that stores all the data needed to reload the current interface to one single external file.
-Could maybe use the saved file locations on _BackupManager, load the interfaces and pickle them.
-
 PROPOSAL: Start passing *args and **kwargs to components update methods.
+
+TODO: Find a way to backup bindings (keybindings are an exception, since they operate at global level).
+Maybe i can have a 'binding_mapping' at _BackupManager. This would be cool to allow reloading everything after unloading, without having to call any other function to reload bindings as well.
 """
 
 
@@ -164,6 +164,16 @@ class PyInterfacer:
         cls._COMPONENT_ACTION_MAPPING.clear()
 
     @classmethod
+    def dump(cls, to: str) -> None:
+        """
+        Dumps a serialized backup file of the current backup state. The interfaces are saved from their file.
+
+        :param to: Path of where to store the file.
+        """
+
+        cls.__backups.dump(to)
+
+    @classmethod
     def reload(cls, raw: bool = False) -> None:
         """
         Reloads the previously saved PyInterfacer state. For this to have any effect, the `backup` parameter of `PyInterfacer.unload` must be passed as `True`. Once restored, the backup will be cleared.
@@ -173,6 +183,17 @@ class PyInterfacer:
 
         if cls.__backups.have_backup:
             cls.__backups.restore(cls, raw)
+            cls.__backups.clear()
+
+    @classmethod
+    def reload_from_dump(cls, path: str) -> None:
+        """
+        Reloads previously saved PyInterfacer state from serialized dumped data. This will overwrite any previous backup. Once restored, the backup will be cleared. The serialized dump file is not modified.
+        """
+
+        if cls.__backups.have_backup:
+            cls.__backups.load(path)
+            cls.__backups.restore(cls, from_dump=True)
             cls.__backups.clear()
 
     @classmethod
