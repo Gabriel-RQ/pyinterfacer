@@ -17,6 +17,7 @@ class Text(Component):
         font: Optional[str] = None,
         font_size: Optional[int] = 18,
         font_color: Optional[str] = "#000000",
+        font_bg_color: Optional[str] = None,
         bold: Optional[bool] = False,
         italic: Optional[bool] = False,
         rotation: Optional[int] = 0,
@@ -26,7 +27,16 @@ class Text(Component):
         super().__init__(**kwargs)
 
         self.text = text
-        self.font = Font(font, font_size, font_color, bold, italic, rotation, antialias)
+        self.font = Font(
+            font,
+            font_size,
+            font_color,
+            font_bg_color,
+            bold,
+            italic,
+            rotation,
+            antialias,
+        )
 
     def update(self) -> None:
         self.image, _ = self.font.render(self.text)

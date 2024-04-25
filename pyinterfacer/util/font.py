@@ -20,6 +20,7 @@ class Font:
         name: Optional[str] = None,
         size: int = 14,
         color: Optional[_Color] = None,
+        bg_color: Optional[_Color] = None,
         bold: bool = False,
         italic: bool = False,
         rotation: int = 0,
@@ -46,6 +47,8 @@ class Font:
 
         self._font.antialiased = antialiased
         self._font.fgcolor = pygame.Color(color)
+        if bg_color is not None:
+            self._font.bgcolor = pygame.Color(bg_color)
         self._font.rotation = rotation
 
     @property
@@ -63,6 +66,14 @@ class Font:
     @color.setter
     def color(self, c: _Color) -> None:
         self._font.fgcolor = pygame.Color(c)
+
+    @property
+    def bg_color(self) -> pygame.Color:
+        return self._font.bgcolor
+
+    @bg_color.setter
+    def bg_color(self, c: _Color) -> None:
+        self._font.bgcolor = pygame.Color(c)
 
     @property
     def bold(self) -> bool:

@@ -302,6 +302,7 @@ Text:
   font: str?
   font_size: int?
   font_color: str?
+  font_bg_color: str?
   bold: bool?
   italic: bool?
   rotation: int?
@@ -322,6 +323,7 @@ Paragraph:
   font: str?
   font_size: int?
   font_color: str?
+  font_bg_color: str?
   bold: bool?
   italic: bool?
   rotation: int?
@@ -369,6 +371,7 @@ Button:
   font: str?
   font_size: int?
   font_color: str?
+  font_bg_color: str?
   bold: bool?
   italic: bool?
   antialias: bool?
@@ -390,6 +393,7 @@ TextButton:
   font: str?
   font_size: int?
   font_color: str?
+  font_bg_color: str?
   bold: bool?
   italic: bool?
   rotation: int?
@@ -413,6 +417,7 @@ Input:
   font: str?
   font_size: int?
   font_color: str?
+  font_bg_color: str?
   bold: bool?
   italic: bool?
   antialias: bool?

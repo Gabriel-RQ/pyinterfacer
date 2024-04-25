@@ -73,6 +73,7 @@ class Text(Component):
     font: str?,
     font_size: int? = 18,
     font_color: str? = "#000000",
+    font_bg_color: str?,
     bold: bool? = False,
     italic: bool? = False,
     rotation: int = 0,
