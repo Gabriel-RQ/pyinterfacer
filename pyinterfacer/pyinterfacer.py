@@ -15,15 +15,16 @@ from .groups import *
 from .components import *
 from .util._overlay import _OverlayManager
 from .util._backup import _BackupManager
+from .util._bindings import _KeyBinding
 
 
 """
 PROPOSAL: Add an 'after' method. It should receive an amount of time and a callback to be executed after the time is reached.
 
+PROPOSAL: Add a 'parent' attribute to interfaces with display type 'overlay', allowing to set them as overlays to another interface, instead of just global overlays.
+
 PROPOSAL: Add a 'dump' or 'export' method that stores all the data needed to reload the current interface to one single external file.
 Could maybe use the saved file locations on _BackupManager, load the interfaces and pickle them.
-
-PROPOSA: Enhance the keybindings system using the existing binding management, and save the id of each component binding, allowing it to be reloaded with _BackupManager.reload.
 
 PROPOSAL: Start passing *args and **kwargs to components update methods.
 """
@@ -45,8 +46,7 @@ class PyInterfacer:
     COMPONENTS: Dict[str, Component] = {}
 
     # Stores all the key bindings. Each key represents a pygame key constant.
-    _KEY_BINDINGS: Dict[int, Callable] = {}
-    _KEYUP_BINDINGS: Dict[int, Callable] = {}
+    _KEY_BINDINGS: Dict[int, _KeyBinding] = {}
 
     # Maps a component id (key) to an action callback (value). Used to map actions easily for Clickable components
     _COMPONENT_ACTION_MAPPING: Dict[str, Callable] = {}
@@ -495,13 +495,13 @@ class PyInterfacer:
                     cls.emit_input(event)
                 else:
                     if (b := cls._KEY_BINDINGS.get(event.key)) is not None:
-                        b()
+                        b.handle(type_="down")
             case pygame.KEYUP:
                 if (
                     not Input.IS_ANY_ACTIVE
-                    and (b := cls._KEYUP_BINDINGS.get(event.key)) is not None
+                    and (b := cls._KEY_BINDINGS.get(event.key)) is not None
                 ):
-                    b()
+                    b.handle(type_="up")
 
     @classmethod
     def handle_hover(cls) -> None:
@@ -574,10 +574,11 @@ class PyInterfacer:
             if not isinstance(v, dict):
                 continue
 
-            if "press" in v and callable((d := v["press"])):
-                cls._KEY_BINDINGS[k] = d
-            if "release" in v and callable((u := v["release"])):
-                cls._KEYUP_BINDINGS[k] = u
+            bind = _KeyBinding(event=k)
+            bind.on_press = v.get("press")
+            bind.on_release = v.get("release")
+
+            cls._KEY_BINDINGS[k] = bind
 
     @classmethod
     def when(

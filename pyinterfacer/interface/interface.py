@@ -45,7 +45,7 @@ class Interface:
         self.columns = columns
         self.size = size
 
-        self.surface = pygame.Surface(self.size, pygame.SRCALPHA).convert_alpha()
+        self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
         self._overlay = _OverlayManager()
         self._underlayer = _OverlayManager()
 
@@ -461,7 +461,6 @@ class Interface:
         b = self._bindings.get(id_)
 
         if b is not None:
-            print("ain ain")
             b.unregister(id_, self._bindings)
 
     def when(

@@ -215,8 +215,7 @@ class PyInterfacer:
     COMPONENTS: Dict[str, Component] # Stores all the components, by their id
 
     # Stores all the key bindings. Each key represents a pygame key constant.
-    _KEY_BINDINGS: Dict[int, Callable] = {}
-    _KEYUP_BINDINGS: Dict[int, Callable] = {}
+    _KEY_BINDINGS: Dict[int, _KeyBinding] = {}
 
     _COMPONENT_CONVERSION_TABLE: Dict[str, Component] # maps a type (key) to a component class (value). Used to handle conversion from YAML atributes to component instances
     _GROUP_CONVERSION_TABLE: Dict[str, ComponentGroup] # Maps a component type (key) to a component group. Used to handle the creation of specific groups for some component types

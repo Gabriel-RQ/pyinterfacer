@@ -5,8 +5,8 @@
 
 import typing
 
-from typing import Literal, Callable, Any, Tuple, Union
-from uuid import uuid4
+from typing import Literal, Callable, Any, Tuple, Union, Optional
+from uuid import UUID, uuid4
 
 if typing.TYPE_CHECKING:
     from ..components import Component
@@ -125,3 +125,56 @@ class _ConditionBinding(_Binding):
 
             if not self._keep:
                 return self.identifier
+
+
+class _KeyBinding(_Binding):
+    """Binds a pygame key event to a callback."""
+
+    def __init__(
+        self,
+        event: int,
+        on_kup: Optional[Callable] = None,
+        on_kdown: Optional[Callable] = None,
+    ) -> None:
+        super().__init__()
+
+        self._event = event
+        self._on_kup: Callable = on_kup
+        self._on_kdown: Callable = on_kdown
+
+    @property
+    def event(self) -> int:
+        return self._event
+
+    @property
+    def on_release(self) -> Optional[Callable]:
+        return self._on_kup
+
+    @on_release.setter
+    def on_release(self, c: Callable) -> None:
+        self._on_kup = c
+
+    @property
+    def on_press(self) -> Optional[Callable]:
+        return self._on_kdown
+
+    @on_press.setter
+    def on_press(self, c: Callable) -> None:
+        self._on_kdown = c
+
+    def handle(self, *args, **kwargs) -> None | UUID:
+        """
+        Calls the callback for the event type.
+
+        :param type_: The event type. Either "up" or "down.
+        """
+
+        e: Literal["up", "down"] = kwargs.get("type_")
+
+        if e is not None:
+            if all((e == "up", self._on_kup is not None, callable(self._on_kup))):
+                self._on_kup()
+            elif all(
+                (e == "down", self._on_kdown is not None, callable(self._on_kdown))
+            ):
+                self._on_kdown()
