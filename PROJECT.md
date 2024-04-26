@@ -485,3 +485,23 @@ Every component should inherit from `Component`. To allow for better group handl
 A display type of `default` or `grid` can be specified to each interface. For interfaces of display type `grid`, `rows` and `columns` attributes must also be specified. If a interface is of display type `default`, it's components should be positioned simply by providing `x` and `y` attributes; if it's display type is `grid`, each component can also be positioned by default `x` and `y` attributes, but the atribute `grid_cell` can be specified to the number of a specific cell in the grid, in which the component will be positioned at the center. Components with the `grid_cell` attribute will have their `x` and `y` attributes ignored.
 
 If `width` and `height` attributes are specified as percentage values to components in a grid cell, the component's size will be calculated relative to the grid cell size, instead of the window size, otherwise, if `width` and `height` are not specified, the component will fill it's grid cell; `width` and `height` can also be specified as `auto` for the components in a grid_cell, which will make the component use it's default sizing behavior (for example, using the size of it's internal text, for a `TextButton`, or just completely disappearing for a `Button`).
+
+# Performance
+
+After making a test where i rendered the current FPS in the center of the display, i noticed that the version that used PyInterfacer got average 300 FPS, and the version that just used plain pygame got average 1000 FPS. The issue is not the Text component, as i also made a version where i used it alone, and it got average 1000 FPS as well.
+
+This performance issue can't be ignored and i will have to either: refactor the hole code or find where's the bottleneck and fix it.
+
+Supposing the refactor case, i have the following ideas:
+
+- Every component should be usable standalone, without PyInterfacer. That is already possible, but quite annoying since some PyInterfacer related attributes must be set.
+- PyInterfacer should no longer use classmethods and static attributes, but instead be a Singleton. This should allow me to easier handle and update the class code, and use some features i could not with classmethods (like allowing to acess interfaces like you do in dictionaries, i.e PyInterfacer["interface-name"]).
+- PyInterfacer should be simpler, with fewer methods, declaring only whats essential for it's functionality. Interface specific functions should be delegated directly to the Interface class. This ensures simplicity and less repetition of code for the same functionality.
+- PyInterfacer should be able to load interfaces on demand by default, instead of preloading everything (should also allow to preload everything, if wanted).
+- PyInterfacer should work with the serialized (pickled) files when loading on demand (unpickling the file instead of parsing YAML seems to be 10x faster). The first loading could be made parsing the YAML declarations, and future loadings could use the pickled file.
+- PyInterfacer should allow what interfaces should be loaded to be set before loading any (like in the very first versions).
+- The managers (\_OverlayManager, \_BindingManager, \_BackupManager, ...) should be expanded to be even more powerfull and have even more control. Specially the backup manager should be able to restore everything (state, bindings, actions, ...), even when changing display size; this would be a very powerful feature to have.
+- Everything should be as simple and performatic as possible. The library should be modular, so more complex and, sometimes unrelated, features should be left to be added externally. This will ensure a good core code for the library.
+- Everything must be integrated and coherent.
+
+These are just some ideas i have now, and i will have to expand that and project everything more thoroughly before taking any action.
