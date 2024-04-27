@@ -40,5 +40,6 @@ class Text(Component):
 
     def update(self, *args, **kwargs) -> None:
         self.image, _ = self.font.render(self.text)
+        self.image = self.image.convert_alpha() # this seems to increase performance
         self._set_rect()
         self._align()
