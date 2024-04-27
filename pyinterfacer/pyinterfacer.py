@@ -23,8 +23,6 @@ PROPOSAL: Add an 'after' method. It should receive an amount of time and a callb
 
 PROPOSAL: Add a 'parent' attribute to interfaces with display type 'overlay', allowing to set them as overlays to another interface, instead of just global overlays.
 
-PROPOSAL: Start passing *args and **kwargs to components update methods.
-
 TODO: Find a way to backup bindings (keybindings are an exception, since they operate at global level).
 Maybe i can have a 'binding_mapping' at _BackupManager. This would be cool to allow reloading everything after unloading, without having to call any other function to reload bindings as well.
 """

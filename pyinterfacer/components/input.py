@@ -96,7 +96,7 @@ class Input(Text, Hoverable):
         else:
             self.bg_color = self._bg_color_backup
 
-    def update(self) -> None:
+    def update(self, *args, **kwargs) -> None:
         self.image = pygame.Surface((self.width, self.height))
         self._set_rect()
         self._align()

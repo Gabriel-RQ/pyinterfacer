@@ -109,7 +109,7 @@ class Component(pygame.sprite.Sprite):
     def _set_rect(self) -> None:
         self.rect = self.image.get_frect()
 
-    def update(self) -> None:
+    def update(self, *args, **kwargs) -> None:
         self.image = pygame.Surface((self.width, self.height))
         self._set_rect()
         self._align()

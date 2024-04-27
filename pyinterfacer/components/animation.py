@@ -52,7 +52,7 @@ class Animation(Component):
         self._current_frame = 0
         self._delay_counter = 0
 
-    def update(self) -> None:
+    def update(self, *args, **kwargs) -> None:
         # Verify if there are loaded images
         if self.images is None or len(self.images) == 0:
             return

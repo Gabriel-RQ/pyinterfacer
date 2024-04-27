@@ -42,5 +42,5 @@ class Image(Component):
             self._set_rect()
             self._align()
 
-    def update(self) -> None:
+    def update(self, *args, **kwargs) -> None:
         return

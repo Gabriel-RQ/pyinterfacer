@@ -76,7 +76,7 @@ class Button(Clickable, Text, Hoverable):
             else:
                 self._load_error = False
 
-    def update(self) -> None:
+    def update(self, *args, **kwargs) -> None:
         # Checks if the background image was loaded successfully
         if self.bg_image is not None and not self._load_error:
             return

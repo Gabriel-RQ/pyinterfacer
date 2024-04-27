@@ -22,7 +22,7 @@ class TextButton(Clickable, Text, Hoverable):
         self.focus_color = focus_color
         self._font_color_backup = self.font.color
 
-    def update(self) -> None:
+    def update(self, *args, **kwargs) -> None:
         super().update()
 
     def hover_action(self) -> None:

@@ -34,7 +34,7 @@ class Paragraph(Text):
 
         return blit_seq
 
-    def update(self) -> None:
+    def update(self, *args, **kwargs) -> None:
         lines = self._render_lines()
         # Calculates the max size for the surface
         max_width = max([line[1].width for line in lines])
