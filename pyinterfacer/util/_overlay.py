@@ -89,6 +89,8 @@ class _OverlayManager:
     def render(self) -> Optional[pygame.Surface]:
         """Returns the overlay's surface with every render target drawn into it."""
 
+        return None # completely disabled the overlay system
+
         if self._surface is None:
             return None
 

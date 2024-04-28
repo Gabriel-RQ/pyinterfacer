@@ -45,7 +45,7 @@ class Interface:
         self.columns = columns
         self.size = size
 
-        self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
+        # self.surface = pygame.Surface(self.size, pygame.SRCALPHA)
         self._overlay = _OverlayManager()
         self._underlayer = _OverlayManager()
 
@@ -327,27 +327,25 @@ class Interface:
 
         # Renders the background
         if self._bg_image is not None:
-            self.surface.blit(self._bg_image, (0, 0))
+            surface.blit(self._bg_image, (0, 0))
         else:
-            self.surface.fill(self._bg_color)
+            surface.fill(self._bg_color)
 
         # Renders the underlayer
         if (u := self._underlayer.render()) is not None:
-            self.surface.blit(u, (0, 0))
+            surface.blit(u, (0, 0))
 
         # Renders the components
-        self._group.draw(self.surface)
+        self._group.draw(surface)
 
         # Renders subgroups
         if len(self._subgroups) > 0:
             for g in self._subgroups:
-                g.draw(self.surface)
+                g.draw(surface)
 
         # Renders the overlay
         if (o := self._overlay.render()) is not None:
-            self.surface.blit(o, (0, 0))
-
-        surface.blit(self.surface, (0, 0))
+            surface.blit(o, (0, 0))
 
     def handle(self, surface: pygame.Surface) -> None:
         """
