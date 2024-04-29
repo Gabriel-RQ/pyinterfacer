@@ -336,8 +336,7 @@ class PyInterfacer:
                 cls._current_focus.draw(cls._display)
 
         if cls._overlay is not None:
-            if (o := cls._overlay.render()) is not None:
-                cls._display.blit(o, (0, 0))
+            cls._overlay.render(cls._display)
 
     @classmethod
     def handle(cls) -> None:

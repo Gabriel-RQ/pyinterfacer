@@ -41,6 +41,8 @@ class _OverlayManager:
     def set_overlay(self, surf: pygame.Surface) -> None:
         """Sets the overlay surface."""
         self._surface = surf
+        self._surface.fill((0, 0, 0, self._opacity))  # controls the overlay opacity
+        self._surface.premul_alpha()
 
     def set_opacity(self, o: int) -> None:
         """
@@ -49,6 +51,8 @@ class _OverlayManager:
         :param o: Integer value from 0 to 255.
         """
         self._opacity = max(0, min(o, 255))
+        self._surface.fill((0, 0, 0, self._opacity))
+        self._surface.premul_alpha()
 
     def get_opacity(self) -> int:
         """Returns the overlay current opacity."""
@@ -86,27 +90,31 @@ class _OverlayManager:
 
         self._render_targets_backup = None
 
-    def render(self) -> Optional[pygame.Surface]:
-        """Returns the overlay's surface with every render target drawn into it."""
+    def render(self, surface: pygame.Surface) -> Optional[pygame.Surface]:
+        """
+        Renders the overlay targets to the provided `surface`.
 
-        return None # completely disabled the overlay system
+        :param surface: Surface to render the overlay to.
+        """
+
+        # return None # completely disabled the overlay system
 
         if self._surface is None:
             return None
 
-        self._surface.fill(
-            (0, 0, 0, self._opacity)
-        )  # fills the overlay with a transparent color, to 'clean' it from previous surfaces
-
         for t in self._render_targets["single"]:
-            self._surface.blit(*t)
+            surface.blit(*t)
 
-        self._surface.blits(self._render_targets["many"])
+        surface.blits(self._render_targets["many"])
 
         for i in self._render_targets["interfaces"]:
-            i.draw(self._surface)
+            i.draw(surface)
 
-        return self._surface
+        # only renders the overlay surface when there is opacity, as this greatly affects performance
+        if self._opacity > 0:
+            surface.blit(
+                self._surface, (0, 0), special_flags=pygame.BLEND_PREMULTIPLIED
+            )
 
     def update_interfaces(self) -> None:
         """Calls `Interface.update` for the interfaces rendered into the overlay."""

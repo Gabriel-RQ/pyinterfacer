@@ -332,8 +332,7 @@ class Interface:
             surface.fill(self._bg_color)
 
         # Renders the underlayer
-        if (u := self._underlayer.render()) is not None:
-            surface.blit(u, (0, 0))
+        self._underlayer.render(surface)
 
         # Renders the components
         self._group.draw(surface)
@@ -344,8 +343,7 @@ class Interface:
                 g.draw(surface)
 
         # Renders the overlay
-        if (o := self._overlay.render()) is not None:
-            surface.blit(o, (0, 0))
+        self._overlay.render(surface)
 
     def handle(self, surface: pygame.Surface) -> None:
         """
