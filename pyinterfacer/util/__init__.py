@@ -1,5 +1,5 @@
 """
-PyInterfacer's general utilities.
+PyInterfacer's common utilities.
 """
 
 from .font import Font
