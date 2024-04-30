@@ -17,7 +17,7 @@ class _ConversionMapping:
     """Defines mappings to convert PyInterfacer components and groups loaded from YAML interface files."""
 
     # Maps a component type (key) a component class (value). Used to handle conversion from YAML loaded components to their instances
-    _COMPONENT_CONVERSION_TABLE: Dict[str, _Component] = {
+    COMPONENT_CONVERSION_TABLE: Dict[str, _Component] = {
         "animation": _Animation,
         "button": _Button,
         "image": _Image,
@@ -28,7 +28,7 @@ class _ConversionMapping:
         "text": _Text,
     }
     # Maps a component type (key) to a component group. Used to handle the creation of specific groups for some component types. Component types not in this dictionary are added to a ComponentGroup by default
-    _GROUP_CONVERSION_TABLE: Dict[str, ComponentGroup] = {
+    GROUP_CONVERSION_TABLE: Dict[str, ComponentGroup] = {
         "clickable": ClickableGroup,
         "hoverable": HoverableGroup,
         "button": ButtonGroup,
@@ -44,7 +44,7 @@ class _ConversionMapping:
         :param components: A dictionary where the `keys` represent the type of the component, and the `values` represent a reference to the component class.
         """
 
-        cls._COMPONENT_CONVERSION_TABLE.update(components)
+        cls.COMPONENT_CONVERSION_TABLE.update(components)
 
     @classmethod
     def extend_group_table(cls, groups: Dict[str, ComponentGroup]) -> None:
@@ -54,4 +54,19 @@ class _ConversionMapping:
         :param groups: A dictionary where the `keys` represent the type of the component, and the `values` represent a reference to the group class.
         """
 
-        cls._GROUP_CONVERSION_TABLE.update(groups)
+        cls.GROUP_CONVERSION_TABLE.update(groups)
+
+    @classmethod
+    def convert_component(cls, type_: str, interface: str, **data) -> _Component:
+        """
+        Converts data loaded from an YAML interface declaration to a component instance.
+
+        :param type_: Component type.
+        :param interface: Interface name.
+        :param **data: Component data.
+        """
+
+        c = cls.COMPONENT_CONVERSION_TABLE.get(type_)
+
+        if c is not None:
+            return c(**data, interface=interface)
