@@ -5,7 +5,7 @@
 
 import pygame
 
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, override
 from ..components import Component, Clickable, Hoverable, Input
 
 
@@ -16,7 +16,14 @@ def _filter_components(component: Component, interfaces: Tuple[str, ...]) -> boo
 class ComponentGroup(pygame.sprite.Group):
     """Base container for Component objects."""
 
+    @override
     def update(self, interfaces: Optional[Tuple[str, ...]] = None) -> None:
+        """
+        Same as `pygame.sprite.Group.update`, extended with interface filtering.
+
+        :param interfaces: Tuple of the interfaces that should be updated.
+        """
+
         if interfaces is not None and len(interfaces) > 0:
             sprites = filter(
                 lambda c: _filter_components(c, interfaces), self.sprites()
@@ -27,11 +34,18 @@ class ComponentGroup(pygame.sprite.Group):
         for sprite in sprites:
             sprite.update()
 
+    @override
     def draw(
         self,
         surface: pygame.Surface,
         interfaces: Optional[Tuple[str, ...]] = None,
     ) -> List:
+        """
+        Same as `pygame.sprite.Group.draw`, extended with interface filtering.
+
+        :param interfaces: Tuple of the interfaces that should be drawn.
+        """
+
         # Filter the sprites
         if interfaces is not None and len(interfaces) > 0:
             sprites = filter(
@@ -56,10 +70,13 @@ class ComponentGroup(pygame.sprite.Group):
 class ClickableGroup(ComponentGroup):
     """Specialized group for handling Clickable components."""
 
-    def handle_click(self, interfaces: Optional[Tuple[str, ...]] = None) -> None:
+    def handle_click(
+        self, mpos: Tuple[int, int], interfaces: Optional[Tuple[str, ...]] = None
+    ) -> None:
         """
         Emits an activation for all the Clickable components in the group to check if they received a click. If `interfaces` is provided, emits the activation only for the components in the specified interfaces.
 
+        :param mpos: Mouse position at event time.
         :param interfaces: Filter the Clickable components that will receive the activation.
         """
 
@@ -70,7 +87,6 @@ class ClickableGroup(ComponentGroup):
         else:
             sprites = self.sprites()
 
-        mpos = pygame.mouse.get_pos()
         for sprite in sprites:
             if isinstance(sprite, Clickable) or hasattr(sprite, "handle_click"):
                 sprite.handle_click(mpos)
@@ -107,7 +123,7 @@ class InputGroup(ClickableGroup, HoverableGroup):
         """
         Handles input for all of the Input components in the group. If `interfaces` is provided, handles the input only for the components in the specified interfaces.
 
-        :param interfaces: Filter the Input components that will receive the activation.
+        :param interfaces: Filter the Input components that will receive the user input.
         """
 
         if interfaces is not None and len(interfaces) > 0:
