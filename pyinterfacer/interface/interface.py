@@ -5,13 +5,22 @@
 
 import pygame
 import os
+import typing
 
-from typing import Tuple, List, Dict, Literal, Optional
+from typing import Tuple, List, Dict, Literal, Optional, Callable, Union, overload
 from ._conversion import _ConversionMapping
-from ..managers import _OverlayManager
+from ..managers import (
+    _OverlayManager,
+    _BindingManager,
+    _ConditionBinding,
+    _ComponentBinding,
+)
 from ..groups import ComponentGroup, ClickableGroup, HoverableGroup, InputGroup
 from ..components.handled import _Component
 from ..util import percent_to_float
+
+if typing.TYPE_CHECKING:
+    from uuid import UUID
 
 
 class Interface:
@@ -34,6 +43,8 @@ class Interface:
 
         self._overlay = _OverlayManager(self.size)
         self._underlayer = _OverlayManager(self.size)
+
+        self._bindings = _BindingManager()
 
         self._bg_color = (0, 0, 0, 0)
         self._bg_image: Optional[pygame.Surface] = None
@@ -160,6 +171,87 @@ class Interface:
                 g.handle_hover((self.name,))
 
     # Bindings
+
+    @overload
+    def create_binding(
+        self,
+        c1: _Component,
+        a1: str,
+        c2: _Component,
+        a2: str,
+    ) -> "UUID":
+        """
+        Creates a binding between two components. When the first component's attribute changes, the second component's attribute will be updated to match it.
+
+        :param c1: Component to bind.
+        :param a1: Attribute of component 1.
+        :param c2: Component to bind to.
+        :param a2: Attribute of component 2.
+        :return: The binding id.
+        """
+
+        ...
+
+    @overload
+    def create_binding(
+        self,
+        c1: _Component,
+        a1: str,
+        callback: Callable,
+    ) -> "UUID":
+        """
+        Creates a binding between a component and a callback. The component's attribute will be constantly updated to match the callback return value.
+
+        :param c1: Component to bind.
+        :param a1: Attribute of the component.
+        :param callback: Callback function that return the attribute updated value.
+        :return: The binding id.
+        """
+
+        ...
+
+    def create_binding(
+        self,
+        c1: _Component,
+        a1: str,
+        c2: Union[_Component, Callable],
+        a2: Optional[str] = None,
+    ) -> "UUID":
+        if isinstance(c2, _Component) and a2 is not None:
+            b = _ComponentBinding("component")
+            b.set_component_binding((c1, a1), (c2, a2))
+        elif callable(c2):
+            b = _ComponentBinding("callback")
+            b.set_callback_binding((c1, a1), c2)
+
+        return self._bindings.register(b)
+
+    def when(
+        self,
+        condition: Callable[[None], bool],
+        callback: Callable[[None], None],
+        *,
+        keep: bool = False,
+    ) -> "UUID":
+        """
+        Binds a condition to a callback.
+
+        :param condition: A function that returns a boolean indicating if the condition is met or not.
+        :param callback: A function that is executed when the condition is met.
+        :param keep: Wether to keep the binding after the condition is first met or not.
+        :return: The binding id.
+        """
+
+        return self._bindings.register(_ConditionBinding(condition, callback, keep))
+
+    def unbind(self, id_: "UUID") -> None:
+        """
+        Removes the binding with the provided `id`, if it exists.
+
+        :param id_: Binding id.
+        """
+
+        self._bindings.unregister(id_)
 
     # Other
 
