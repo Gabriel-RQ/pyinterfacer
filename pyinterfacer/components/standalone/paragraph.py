@@ -6,7 +6,7 @@
 import pygame
 
 from .text import Text
-from typing import List, Optional
+from typing import List, Optional, override
 
 
 class Paragraph(Text):
@@ -37,6 +37,7 @@ class Paragraph(Text):
 
         return blit_seq
 
+    @override
     def update(self, *args, **kwargs) -> None:
         lines = self._render_lines()
         # Calculates the max size for the surface

@@ -7,6 +7,7 @@ import pygame
 
 from typing import Tuple, Optional
 from ._standalone_component import _StandaloneComponent
+from typing import override
 
 
 class Animation(_StandaloneComponent):
@@ -52,6 +53,7 @@ class Animation(_StandaloneComponent):
         self._current_frame = 0
         self._delay_counter = 0
 
+    @override
     def update(self, *args, **kwargs) -> None:
         # Verify if there are loaded images
         if self.images is None or len(self.images) == 0:

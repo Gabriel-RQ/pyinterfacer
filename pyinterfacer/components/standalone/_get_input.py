@@ -10,6 +10,7 @@ from typing import Any
 
 
 class _GetInput(_StandaloneComponent):
+    """Base class for components that receive user input."""
 
     IS_ANY_ACTIVE = False
 

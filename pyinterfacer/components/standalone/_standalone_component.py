@@ -20,6 +20,8 @@ _AlignmentOptions = Literal[
 
 
 class AlignmentOptions(Enum):
+    """Possible component alignment options."""
+
     CENTER = "center"
     TOP_LEFT = "topleft"
     TOP_RIGHT = "topright"
@@ -37,7 +39,7 @@ class _StandaloneComponent(pygame.sprite.Sprite):
     def __init__(
         self,
         pos: Tuple[float, float],
-        size: Optional[Tuple[int, int]],
+        size: Tuple[int, int] = (0, 0),
         alignment: _AlignmentOptions | AlignmentOptions = "center",
         static: bool = False,
         groups: Tuple[pygame.sprite.AbstractGroup, ...] = (),
@@ -57,7 +59,7 @@ class _StandaloneComponent(pygame.sprite.Sprite):
         else:
             self.alignment = (
                 alignment if alignment in _AlignmentOptions.__args__ else "center"
-            )
+            )  # Alignment fallback to 'center' if not specified or invalid
 
         self.image = pygame.Surface(size)
         self._set_rect()

@@ -4,6 +4,7 @@
 """
 
 from ._static_text import _StaticText
+from typing import override
 
 
 class Text(_StaticText):
@@ -12,6 +13,7 @@ class Text(_StaticText):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
 
+    @override
     def update(self, *args, **kwargs) -> None:
         if self._static:
             return

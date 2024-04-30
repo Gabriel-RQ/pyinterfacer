@@ -7,6 +7,7 @@ import os
 import pygame
 
 from ._standalone_component import _StandaloneComponent
+from typing import override
 
 
 class Image(_StandaloneComponent):
@@ -18,6 +19,7 @@ class Image(_StandaloneComponent):
         self.path = path
         self.preload_image()
 
+    @override
     def preload_image(self) -> None:
         # Tries to load the specified image
         try:

@@ -6,7 +6,7 @@
 import pygame
 import os
 
-from typing import Optional
+from typing import Optional, override
 from ._clickable import _Clickable
 from ._hoverable import _Hoverable
 from .text import Text
@@ -38,6 +38,7 @@ class Button(_Clickable, Text, _Hoverable):
 
         self.preload_image()
 
+    @override
     def preload_image(self) -> None:
         """Try to initializes the button's background image."""
         if self.bg_image is not None:
@@ -76,6 +77,17 @@ class Button(_Clickable, Text, _Hoverable):
             else:
                 self._load_error = False
 
+    @override
+    def hover_action(self) -> None:
+        if self.bg_focus_color is None or self.bg_image is not None:
+            return
+
+        if self._hovered:
+            self.bg_color = self.bg_focus_color
+        else:
+            self.bg_color = self._bg_color_backup
+
+    @override
     def update(self, *args, **kwargs) -> None:
         # Checks if the background image was loaded successfully
         if self.bg_image is not None and not self._load_error:
@@ -112,12 +124,3 @@ class Button(_Clickable, Text, _Hoverable):
                 (self.height - txt_rect.height) // 2,
             ),
         )
-
-    def hover_action(self) -> None:
-        if self.bg_focus_color is None or self.bg_image is not None:
-            return
-
-        if self._hovered:
-            self.bg_color = self.bg_focus_color
-        else:
-            self.bg_color = self._bg_color_backup
