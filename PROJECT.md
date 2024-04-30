@@ -510,3 +510,4 @@ NOTE TO SELF: I managed to track the performance issues down to the Interface cl
 It actually looks like the entire draw method is _doomed_. Removing the overlays rendering also give performance boots, the same for almost every other part of it's code.
 
 NEW INFO: Managed to track down the performance issues even further to the overlay system.
+NEW INFO: Started to refactor the code for the library. Most of it is already made.
