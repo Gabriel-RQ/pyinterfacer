@@ -510,3 +510,5 @@ These are just some ideas i have now, and i will have to expand that and project
 - Or could overload it in PyInterfacer to delete an interface, and at the interface to delete a component.
 - The `injection` system should allow to inject components and hole interfaces.
 - PyInterfacer should also allow to 'export' the YAML declarations for loaded interfaces (this can be used in future plans of a tool to build interfaces with a GUI)
+
+Started refactor on PyInterfacer, most work is done. Need to work on the backup manager and other missing features from the old version.
