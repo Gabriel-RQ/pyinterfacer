@@ -47,7 +47,11 @@ class _BindingManager:
         """Handles all bindings."""
 
         for b in self._bindings.values():
-            b.handle()
+            id_ = b.handle()
+
+            # Check if the binding should be unregistered
+            if id_ is not None:
+                self.unregister(id_)
 
 
 class _Binding:
@@ -60,6 +64,7 @@ class _Binding:
     def identifier(self):
         return self._id
 
+    # Bindings should return their identifier in handle when they are to be unregistered after executed
     def handle(self, *args, **kwargs) -> Union[None, "UUID"]: ...
 
 

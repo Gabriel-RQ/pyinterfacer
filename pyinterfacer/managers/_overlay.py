@@ -39,6 +39,11 @@ class _OverlayManager:
         self._surface.fill((0, 0, 0, self._opacity))
         self._surface = self._surface.premul_alpha()
 
+    def change_size(self, size: Tuple[int, int]) -> None:
+        """Changes the overlay surface size."""
+
+        self._surface = pygame.Surface(size, flags=pygame.SRCALPHA).premul_alpha()
+
     def add_single_target(
         self, s: pygame.Surface, d: pygame.Rect | Tuple[int, int]
     ) -> None:
@@ -95,7 +100,7 @@ class _OverlayManager:
         :param surface: Surface to render the overlay to.
         """
 
-        # return None # completely disabled the overlay system
+        # return None # completely disables the overlay system
 
         surface.blits((t for t in self._render_targets["single"]))
         surface.blits(self._render_targets["many"])
@@ -109,8 +114,8 @@ class _OverlayManager:
                 self._surface, (0, 0), special_flags=pygame.BLEND_PREMULTIPLIED
             )
 
-    def update_interfaces(self) -> None:
+    def update_interfaces(self, dt: float) -> None:
         """Calls `Interface.update` for the interfaces rendered into the overlay."""
 
         for i in self._render_targets["interfaces"]:
-            i.update()
+            i.update(dt)
