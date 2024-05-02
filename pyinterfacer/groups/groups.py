@@ -6,11 +6,16 @@
 import pygame
 
 from typing import List, Tuple, Optional, override
-from ..components import Component, Clickable, Hoverable, Input
+from ..components.handled import (
+    _Component,
+    _HandledClickable,
+    _HandledHoverable,
+    _HandledGetInput,
+)
 
 
-def _filter_components(component: Component, interfaces: Tuple[str, ...]) -> bool:
-    return isinstance(component, Component) and component.interface in interfaces
+def _filter_components(component: _Component, interfaces: Tuple[str, ...]) -> bool:
+    return isinstance(component, _Component) and component.interface in interfaces
 
 
 class ComponentGroup(pygame.sprite.Group):
@@ -88,7 +93,7 @@ class ClickableGroup(ComponentGroup):
             sprites = self.sprites()
 
         for sprite in sprites:
-            if isinstance(sprite, Clickable) or hasattr(sprite, "handle_click"):
+            if isinstance(sprite, _HandledClickable) or hasattr(sprite, "handle_click"):
                 sprite.handle_click(mpos)
 
 
@@ -110,7 +115,7 @@ class HoverableGroup(ComponentGroup):
 
         mpos = pygame.mouse.get_pos()
         for sprite in sprites:
-            if isinstance(sprite, Hoverable):
+            if isinstance(sprite, _HandledHoverable):
                 sprite.handle_hover(mpos)
 
 
@@ -134,7 +139,7 @@ class InputGroup(ClickableGroup, HoverableGroup):
             sprites = self.sprites()
 
         for sprite in sprites:
-            if isinstance(sprite, Input):
+            if isinstance(sprite, _HandledGetInput):
                 match event.type:
                     case pygame.KEYDOWN:
                         sprite.handle_input(event.key)
