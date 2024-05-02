@@ -64,7 +64,7 @@ class _HandledComponent:
         self.grid_cell = grid_cell
         self.style_classes = tuple(style) if style is not None else None
 
-        self._subtype: DefaultComponentTypes | _DefaultComponentTypes = (
+        self.subtype: DefaultComponentTypes | _DefaultComponentTypes = (
             DefaultComponentTypes.COMPONENT
         )  # Should be set by custom components, to indicate which of the default component set type the custom component belong to (used for group handling)
 
@@ -81,40 +81,79 @@ class _HandledComponent:
         pass
 
 
-class _HandledClickable(_HandledComponent, _Clickable): ...
+class _HandledClickable(_HandledComponent, _Clickable):
+    def __init__(self, **kwargs) -> None:
+        _HandledComponent.__init__(self, **kwargs)
+        _Clickable.__init__(self, **kwargs)
 
 
-class _HandledHoverable(_HandledComponent, _Hoverable): ...
+class _HandledHoverable(_HandledComponent, _Hoverable):
+    def __init__(self, **kwargs) -> None:
+        _HandledComponent.__init__(self, **kwargs)
+        _Hoverable.__init__(self, **kwargs)
 
 
-class _HandledStaticText(_HandledComponent, _StaticText): ...
+class _HandledStaticText(_HandledComponent, _StaticText):
+    def __init__(self, **kwargs) -> None:
+        _HandledComponent.__init__(self, **kwargs)
+        _StaticText.__init__(self, **kwargs)
 
 
-class _HandledGetInput(_HandledComponent, _GetInput): ...
+class _HandledGetInput(_HandledComponent, _GetInput):
+    def __init__(self, **kwargs) -> None:
+        _HandledComponent.__init__(self, **kwargs)
+        _GetInput.__init__(self, **kwargs)
 
 
-class _Component(_HandledComponent, _StandaloneComponent): ...
+class _Component(_HandledComponent, _StandaloneComponent):
+    def __init__(self, **kwargs) -> None:
+        _HandledComponent.__init__(self, **kwargs)
+        _StandaloneComponent.__init__(self, **kwargs)
 
 
-class _Animation(_HandledComponent, Animation): ...
+class _Animation(_HandledComponent, Animation):
+    def __init__(self, **kwargs) -> None:
+        _HandledComponent.__init__(self, **kwargs)
+        Animation.__init__(self, **kwargs)
 
 
-class _Button(_HandledComponent, Button): ...
+class _Button(_HandledComponent, Button):
+    def __init__(self, **kwargs) -> None:
+        _HandledComponent.__init__(self, **kwargs)
+        Button.__init__(self, **kwargs)
 
 
-class _Image(_HandledComponent, Image): ...
+class _Image(_HandledComponent, Image):
+    def __init__(self, **kwargs) -> None:
+        _HandledComponent.__init__(self, **kwargs)
+        Image.__init__(self, **kwargs)
 
 
-class _Input(_HandledComponent, Input): ...
+class _Input(_HandledComponent, Input):
+    def __init__(self, **kwargs) -> None:
+        _HandledComponent.__init__(self, **kwargs)
+        Input.__init__(self, **kwargs)
 
 
-class _Paragraph(_HandledComponent, Paragraph): ...
+class _Paragraph(_HandledComponent, Paragraph):
+    def __init__(self, **kwargs) -> None:
+        _HandledComponent.__init__(self, **kwargs)
+        Paragraph.__init__(self, **kwargs)
 
 
-class _SpritesheetAnimation(_HandledComponent, SpritesheetAnimation): ...
+class _SpritesheetAnimation(_HandledComponent, SpritesheetAnimation):
+    def __init__(self, **kwargs) -> None:
+        _HandledComponent.__init__(self, **kwargs)
+        SpritesheetAnimation.__init__(self, **kwargs)
 
 
-class _TextButton(_HandledComponent, TextButton): ...
+class _TextButton(_HandledComponent, TextButton):
+    def __init__(self, **kwargs) -> None:
+        _HandledComponent.__init__(self, **kwargs)
+        TextButton.__init__(self, **kwargs)
 
 
-class _Text(_HandledComponent, Text): ...
+class _Text(_HandledComponent, Text):
+    def __init__(self, **kwargs) -> None:
+        _HandledComponent.__init__(self, **kwargs)
+        Text.__init__(self, **kwargs)

@@ -50,8 +50,9 @@ class _StandaloneComponent(pygame.sprite.Sprite):
 
         self.x = pos[0]
         self.y = pos[1]
-        self.width = size[0]
-        self.height = size[1]
+        self.width = size[0] or 0
+        self.height = size[1] or 0
+
         self._static = static  # controls if the component updates every frame or is static. Static components should not update.
 
         if isinstance(alignment, AlignmentOptions):
@@ -61,7 +62,7 @@ class _StandaloneComponent(pygame.sprite.Sprite):
                 alignment if alignment in _AlignmentOptions.__args__ else "center"
             )  # Alignment fallback to 'center' if not specified or invalid
 
-        self.image = pygame.Surface(size)
+        self.image = pygame.Surface((self.width, self.height))
         self._set_rect()
         self._align()
 
