@@ -16,7 +16,7 @@ from ..managers import (
     _ComponentBinding,
 )
 from ..groups import ComponentGroup, ClickableGroup, HoverableGroup, InputGroup
-from ..components.handled import _Component
+from ..components.handled import _Component, DefaultComponentTypes
 from ..util import percent_to_float
 
 if typing.TYPE_CHECKING:
@@ -85,6 +85,7 @@ class Interface:
     def component_mapping(self) -> Dict[str, _Component]:
         """
         Dictionary of the components in the interface, where `key` is the component ID, and `value` is the component instance.
+        Ignore components with id equals to '_'.
 
         :returns: Components dictionary.
         """
@@ -101,7 +102,7 @@ class Interface:
 
         self._group.update(dt=dt)
         self._subgroup.update(dt=dt)
-        # TODO: Update _BindingManager
+        self._bindings.handle()
 
     def draw(self, surface: pygame.Surface) -> None:
         """
@@ -117,7 +118,7 @@ class Interface:
             surface.fill(self._bg_color)
 
         # Renders the underlayer
-        self._underlayer.render()
+        self._underlayer.render(surface)
 
         # Renders the components
         self._group.draw(surface)
@@ -146,8 +147,8 @@ class Interface:
         Calls `Clickable.handle_click` for all `Clickable` components in the interface, through `ClickableGroup.handle_click`.
         """
 
-        for group in self._type_groups:
-            if isinstance((g := self._type_groups[group]), ClickableGroup):
+        for group in self._component_type_groups:
+            if isinstance((g := self._component_type_groups[group]), ClickableGroup):
                 g.handle_click((self.name,))
 
     def emit_input(self, event) -> None:
@@ -157,8 +158,8 @@ class Interface:
         :param event: Pygame event.
         """
 
-        for group in self._type_groups:
-            if isinstance((g := self._type_groups[group]), InputGroup):
+        for group in self._component_type_groups:
+            if isinstance((g := self._component_type_groups[group]), InputGroup):
                 g.handle_input(event, (self.name,))
 
     def handle_hover(self) -> None:
@@ -166,8 +167,8 @@ class Interface:
         Calls `HoverableGroup.handle_hover` for all `Hoverable` components in the interface, through `HoverableGroup.handle_hover`
         """
 
-        for group in self._type_groups:
-            if isinstance((g := self._type_groups[group]), HoverableGroup):
+        for group in self._component_type_groups:
+            if isinstance((g := self._component_type_groups[group]), HoverableGroup):
                 g.handle_hover((self.name,))
 
     # Bindings
@@ -314,6 +315,9 @@ class Interface:
             if "id" not in component:
                 component["id"] = "_"
 
+            component["pos"] = (component["x"], component["y"])
+            component["size"] = (component.get("width"), component.get("height"))
+
             # instantiates a component according to it's type
             c = _ConversionMapping.convert_component(
                 type_=component["type"].lower(),
@@ -324,11 +328,11 @@ class Interface:
             self._components.append(c)
 
             # verifies if there's not a component group for it's type yet
-            if c.type not in self._type_groups:
+            if c.type not in self._component_type_groups:
                 self.__handle_new_type_group(c)
 
             # adds the component to it's groups
-            self._type_groups[c.type].add(c)
+            self._component_type_groups[c.type].add(c)
             self._group.add(c)
 
     def __parse_percentage_values(
@@ -429,16 +433,31 @@ class Interface:
         :param component: A component instance.
         """
 
+        if isinstance(component.subtype, DefaultComponentTypes):
+            subtype = component.subtype.value
+        else:
+            subtype = component.subtype
+
         # Verifies if the component's type or subtype have a special group that should be used
         if component.type in _ConversionMapping.GROUP_CONVERSION_TABLE:
-            self._type_groups[component.type] = (
+            self._component_type_groups[component.type] = (
                 _ConversionMapping.GROUP_CONVERSION_TABLE[component.type]()
             )
-        elif component.subtype in _ConversionMapping.GROUP_CONVERSION_TABLE:
-            self._type_groups[component.type] = (
-                _ConversionMapping.GROUP_CONVERSION_TABLE[component.subtype]()
+        elif subtype in _ConversionMapping.GROUP_CONVERSION_TABLE:
+            self._component_type_groups[component.type] = (
+                _ConversionMapping.GROUP_CONVERSION_TABLE[subtype]()
             )
         else:
-            self._type_groups[component.type] = (
+            self._component_type_groups[component.type] = (
                 ComponentGroup()
             )  # otherwise use the most generic ComponentGroup
+
+    # Magic operators
+
+    def __getitem__(self, component: str) -> Optional[_Component]:
+        idx = self._components.index(component)
+
+        if idx != -1:
+            return self.components[idx]
+
+        return None
