@@ -17,10 +17,10 @@ import typing
 import yaml
 
 from .interface import Interface, _ConversionMapping
-from .components.handled import _HandledClickable
-from .managers import _OverlayManager
+from .components.handled import _HandledClickable, _HandledGetInput
+from .managers import _OverlayManager, _BindingManager, _KeyBinding
 from .util import Singleton
-from typing import Optional, Dict, Callable
+from typing import Optional, Dict, Callable, Union, Literal, overload
 
 if typing.TYPE_CHECKING:
     from .components.handled import _Component
@@ -41,9 +41,11 @@ class PyInterfacer(metaclass=Singleton):
         self._display: Optional[pygame.Surface] = (
             pygame.display.get_surface() if pygame.display.get_active() else None
         )
+
         self._overlay = _OverlayManager(
             self.display.get_size() if self.display else (0, 0)
         )
+        self._bindings = _BindingManager()
 
         self._current_focus: Optional[Interface] = None
         self._paused = False
@@ -131,6 +133,30 @@ class PyInterfacer(metaclass=Singleton):
         self._overlay.update_interfaces(dt)
         self._overlay.render(self._display)
 
+    def handle_event(self, event: pygame.Event) -> None:
+        """
+        Handles pygame events. This let's PyInterfacer handle it's Clickable and Input components, for example.
+
+        :param event: Pygame event.
+        """
+
+        match event.type:
+            case pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    if self._current_focus is not None:
+                        self._current_focus.emit_click(event.pos)
+            case pygame.TEXTINPUT | pygame.TEXTEDITING:
+                if _HandledGetInput.IS_ANY_ACTIVE and self._current_focus is not None:
+                    self._current_focus.emit_input(event)
+            case pygame.KEYDOWN:
+                if _HandledGetInput.IS_ANY_ACTIVE and self._current_focus is not None:
+                    self._current_focus.emit_input(event)
+                else:
+                    self._bindings.handle_single(event.key, type_="down")
+            case pygame.KEYUP:
+                if not _HandledGetInput.IS_ANY_ACTIVE:
+                    self._bindings.handle_single(event.key, type_="up")
+
     # Focus handling
 
     def go_to(self, interface: str) -> None:
@@ -216,6 +242,70 @@ class PyInterfacer(metaclass=Singleton):
 
         self._component_action_mapping.update(actions)
         self._update_actions()
+
+    @overload
+    def bind(self, c1: str, a1: str, c2: str, a2: str):
+        """
+        Binds a component attribute to another component attribute.
+
+        :param c1: ID of the component to bind.
+        :param a1: Attribute of the component to bind.
+        :param c2: ID of the component to bind to.
+        :param a2: Attribute of the component to bind to.
+        :return: The binding id.
+        """
+
+        ...
+
+    @overload
+    def bind(self, c1: str, a1: str, callback: Callable):
+        """
+        Binds a component attribute to a callback. The callback will receive the attribute value, and should return it's updated value.
+
+        :param c1: ID of the component to bind.
+        :param a1: Attribute of the component to bind.
+        :param callback: Callback function that returns the value for the attribute.
+        :return: The binding id.
+        """
+
+        ...
+
+    def bind(
+        self, c1: str, a1: str, c2: Union[str, Callable], a2: Optional[str] = None
+    ):
+        if isinstance(c2, str) and a2 is not None:
+            if c1 in self._components and c2 in self._components:
+                # binding is done at interface level
+                i = self._interfaces.get(self._components[c1].interface)
+
+                if i is not None:
+                    return i.create_binding(
+                        self._components[c1], a1, self._components[c2], a2
+                    )
+        elif callable(c2):
+            if c1 in self._components:
+                i = self._interfaces.get(self._components[c1].interface)
+
+                if i is not None:
+                    return i.create_binding(self._components[c1], a1, c2)
+
+    def bind_keys(
+        self, b: Dict[int, Dict[Literal["press", "release"], Callable]]
+    ) -> None:
+        """
+        Binds a keypress to a callback.
+
+        :param b: A mapping where the keys are integers (pygame key constants) and the values are dictionaries in the format {"press": Callback?, "release": Callback?}. At least one of the callbacks should be provided.
+        """
+
+        for k, v in b.items():
+            if not isinstance(v, dict):
+                continue
+
+            bind = _KeyBinding(event=k)
+            bind.on_press = v.get("press")
+            bind.on_release = v.get("release")
+            self._bindings.register(bind)
 
     # Internal methods
 
