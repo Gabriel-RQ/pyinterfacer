@@ -142,14 +142,16 @@ class Interface:
 
     # Component event handling
 
-    def emit_click(self) -> None:
+    def emit_click(self, mpos: Tuple[int, int]) -> None:
         """
         Calls `Clickable.handle_click` for all `Clickable` components in the interface, through `ClickableGroup.handle_click`.
+
+        :param mpos: Mouse position.
         """
 
         for group in self._component_type_groups:
             if isinstance((g := self._component_type_groups[group]), ClickableGroup):
-                g.handle_click((self.name,))
+                g.handle_click(mpos, interfaces=(self.name,))
 
     def emit_input(self, event) -> None:
         """
