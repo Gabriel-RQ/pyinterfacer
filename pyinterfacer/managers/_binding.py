@@ -61,8 +61,9 @@ class _BindingManager:
         """
 
         b = self._bindings.get(id_)
+
         if b is not None:
-            bid = b.handle(*args, *kwargs)
+            bid = b.handle(*args, **kwargs)
 
             if bid is not None:
                 self.unregister(bid)
