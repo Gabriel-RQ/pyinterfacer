@@ -506,7 +506,9 @@ Supposing the refactor case, i have the following ideas:
 
 These are just some ideas i have now, and i will have to expand that and project everything more thoroughly before taking any action.
 
-NOTE TO SELF: I managed to track the performance issues down to the Interface class draw method. It looks like when i blit the the component group to the interface's surface, and then the surface to the display, i get the lower FPS. If, instead, i blit the component group directly to the display, the FPS is as high as expected (comparing with tests i made without using the library). I have to find a solution for this, be it refactoring the code to blit directly to the display, or solving it with the current aproach.
-It actually looks like the entire draw method is _doomed_. Removing the overlays rendering also give performance boots, the same for almost every other part of it's code.
+- Maybe overload the `del` operator in PyInterfacer to delete a specific component or interface
+- Or could overload it in PyInterfacer to delete an interface, and at the interface to delete a component.
+- The `injection` system should allow to inject components and hole interfaces.
+- PyInterfacer should also allow to 'export' the YAML declarations for loaded interfaces (this can be used in future plans of a tool to build interfaces with a GUI)
 
-NEW INFO: Managed to track down the performance issues even further to the overlay system.
+Started refactor on PyInterfacer, most work is done. Need to work on the backup manager and other missing features from the old version.
