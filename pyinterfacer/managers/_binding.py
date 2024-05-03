@@ -43,15 +43,29 @@ class _BindingManager:
 
         self._bindings.clear()
 
-    def handle(self) -> None:
+    def handle(self, *args, **kwargs) -> None:
         """Handles all bindings."""
 
         for b in self._bindings.values():
-            id_ = b.handle()
+            id_ = b.handle(*args, **kwargs)
 
             # Check if the binding should be unregistered
             if id_ is not None:
                 self.unregister(id_)
+
+    def handle_single(self, id_: UUID, *args, **kwargs) -> None:
+        """
+        Handles a single binding.
+
+        :param id_: The id of the binding to handle.
+        """
+
+        b = self._bindings.get(id_)
+        if b is not None:
+            bid = b.handle(*args, *kwargs)
+
+            if bid is not None:
+                self.unregister(bid)
 
 
 class _Binding:
@@ -159,7 +173,7 @@ class _ConditionBinding(_Binding):
 
 
 class _KeyBinding(_Binding):
-    """Binds a pygame key event to a callback."""
+    """Binds a pygame key event to a callback. The identifier of a _KeyBindings is the event."""
 
     def __init__(
         self,
@@ -169,6 +183,7 @@ class _KeyBinding(_Binding):
     ) -> None:
         super().__init__()
 
+        self._id = event  # keybindings will use the pygame key event as their id, allowing for easier access
         self._event = event
         self._on_kup: Callable = on_kup
         self._on_kdown: Callable = on_kdown
