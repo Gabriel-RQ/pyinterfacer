@@ -14,6 +14,10 @@ if typing.TYPE_CHECKING:
     from ..interface import Interface
     from ..components.handled import _Component
     from ._binding import _BindingManager
+    from ._overlay import _OverlayManager
+
+
+# TODO: Backup global overlay and interfaces overlays
 
 
 class _BackupManager:
@@ -34,8 +38,6 @@ class _BackupManager:
         )
 
         self._interface_files: List[str] = []
-        # list of dictionaries loaded from YAML interface declaration / unserialized from dumped file. Only used when restoring a serilized backup file.
-        self._raw_interface_data: list[dict] = []
 
     def remember_interface_file(self, i: str) -> None:
         """
@@ -97,3 +99,30 @@ class _BackupManager:
             if interface_bindings is not None:
                 for interface, binding_man in interface_bindings.items():
                     pyinterfacer._interfaces[interface]._bindings = binding_man
+
+        pyinterfacer._update_actions()
+
+    def reload(self, pyinterfacer: "PyInterfacer") -> None:
+        """
+        Reload the last saved state.
+
+        :param pyinterfacer: PyInterfacer's object instance.
+        """
+
+        pyinterfacer._interfaces = self.interfaces.copy()
+        pyinterfacer._components = self.components.copy()
+        pyinterfacer._current_focus = pyinterfacer._interfaces.get(self.focus)
+        pyinterfacer._component_action_mapping = self.actions.copy()
+        pyinterfacer._bindings = self.keybindings
+        pyinterfacer._update_actions()
+        pyinterfacer.overlay.restore()
+
+    def clear(self) -> None:
+        """Clears the runtime backups."""
+
+        self.focus = None
+        self.interfaces.clear()
+        self.components.clear()
+        self.actions.clear()
+        self.keybindings = None
+        self.have_backup = False
