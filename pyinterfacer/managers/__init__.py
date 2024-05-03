@@ -10,3 +10,4 @@ from ._binding import (
     _ConditionBinding,
     _KeyBinding,
 )
+from ._backup import _BackupManager

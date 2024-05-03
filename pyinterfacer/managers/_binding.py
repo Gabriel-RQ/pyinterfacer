@@ -1,6 +1,6 @@
 """
 @author: Gabriel RQ
-@description: This file declares the bindings used in PyInterfacer.
+@description: This module declares the bindings used in PyInterfacer.
 """
 
 import typing
