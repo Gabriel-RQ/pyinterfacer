@@ -113,15 +113,7 @@ class PyInterfacer(metaclass=Singleton):
         """
 
         if backup and not self.__backup.have_backup:
-            self.__backup.have_backup = True
-            self.__backup.focus = (
-                self._current_focus.name if self._current_focus else None
-            )
-            self.__backup.interfaces = self._interfaces.copy()
-            self.__backup.components = self._components.copy()
-            self.__backup.actions = self._component_action_mapping.copy()
-            self.__backup.overlay = self._overlay
-            self.__backup.keybindings = self._bindings
+            self._fill_backup_info()
 
         self._current_focus = None
         self._interfaces.clear()
@@ -160,6 +152,21 @@ class PyInterfacer(metaclass=Singleton):
                 self.__interface_queue.pop(i)
 
     # Backup
+
+    def persist_backup(self) -> None:
+        """
+        Saves the current PyInterfacer information in a serialized backup file. Uses the `backup_directory_path` property to determine the backup directory.
+        """
+
+        self._fill_backup_info()
+        self.__backup.save()
+
+    def load_backup(self) -> None:
+        """
+        Reloads the last saved PyInterfacer data from a serialized backup file. Uses the `backup_directory_path` property to determine the backup directory.
+        """
+
+        self.__backup.load(self)
 
     # Update and render
 
@@ -423,6 +430,17 @@ class PyInterfacer(metaclass=Singleton):
 
             if isinstance(c, _HandledClickable):
                 c.action = self._components[id_]
+
+    def _fill_backup_info(self) -> None:
+        """Fills the backup information with the current PyInterfacer state."""
+
+        self.__backup.have_backup = True
+        self.__backup.focus = self._current_focus.name if self._current_focus else None
+        self.__backup.interfaces = self._interfaces.copy()
+        self.__backup.components = self._components.copy()
+        self.__backup.actions = self._component_action_mapping.copy()
+        self.__backup.overlay = self._overlay
+        self.__backup.keybindings = self._bindings
 
     # Magic operators
 

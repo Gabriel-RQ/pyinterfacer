@@ -17,7 +17,8 @@ if typing.TYPE_CHECKING:
     from ._overlay import _OverlayManager
 
 
-# TODO: Backup global overlay and interfaces overlays
+# TODO: Backup global overlay and interfaces overlays (haver to consider surfaces cant be serialized)
+# TODO: Backup interfaces bindings (maybe save the id of the binding and the function to call?). Cant save the component itself because it contains a Surface.
 
 
 class _BackupManager:
@@ -65,7 +66,8 @@ class _BackupManager:
             with open(i, "r") as f:
                 interfaces.append(yaml.safe_load(f))
 
-        interface_bindings = {i.name: i._bindings for i in self.interfaces.values()}
+        # interface_bindings = {i.name: i._bindings for i in self.interfaces.values()}
+        interface_bindings = None
 
         # Save to the serialized backup
         with shelve.open(os.path.join(self.backup_path, "pyinterfacer")) as bak:
@@ -74,9 +76,7 @@ class _BackupManager:
             bak["focus"] = self.focus
             bak["actions"] = self.actions
             bak["interfaces"] = interfaces
-            bak["bindings"] = {}
-            bak["bindings"]["keybindings"] = self.keybindings
-            bak["bindings"]["interfaces"] = interface_bindings
+            bak["bindings"] = {"keybindings": self.keybindings, "interfaces": interface_bindings}
 
     def load(self, pyinterfacer: "PyInterfacer") -> None:
         """
@@ -92,13 +92,15 @@ class _BackupManager:
         with shelve.open(backup_file) as bak:
             pyinterfacer._current_focus = bak.get("focus")
             pyinterfacer._component_action_mapping = bak.get("actions")
-            pyinterfacer._interfaces = bak.get("interfaces")
             pyinterfacer._bindings = bak["bindings"]["keybindings"]
 
-            interface_bindings = bak["bindings"]["interfaces"]
-            if interface_bindings is not None:
-                for interface, binding_man in interface_bindings.items():
-                    pyinterfacer._interfaces[interface]._bindings = binding_man
+            for interface in bak.get("interfaces"):
+                pyinterfacer._parse_interface(interface)
+
+            # interface_bindings = bak["bindings"]["interfaces"]
+            # if interface_bindings is not None:
+            #     for interface, binding_man in interface_bindings.items():
+            #         pyinterfacer._interfaces[interface]._bindings = binding_man
 
         pyinterfacer._update_actions()
 
