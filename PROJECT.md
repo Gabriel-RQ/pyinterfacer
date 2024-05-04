@@ -512,3 +512,5 @@ These are just some ideas i have now, and i will have to expand that and project
 - PyInterfacer should also allow to 'export' the YAML declarations for loaded interfaces (this can be used in future plans of a tool to build interfaces with a GUI)
 
 Finished most of the work in the PyInterfacer refactor (dev branch) - it's just as fast as a project without it, providing many conveniences to handle the components and interfaces. Need to keep the work on the backup manager, but the current state is already very promising. The code is now, in general, simpler, easier to read and mantain, and more extendable.
+
+Remember: To save the interface bindings i'll have to remember that: - Surfaces are not serializable (can't save the component instance itself) - Lambda functios are not serializable (the callbacks for component-callback bindings must be functions, if intended to be saved)
