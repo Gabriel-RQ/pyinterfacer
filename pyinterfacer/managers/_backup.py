@@ -6,17 +6,17 @@
 import os
 import yaml
 import typing
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Tuple, Callable
 
 if typing.TYPE_CHECKING:
     from ..pyinterfacer import PyInterfacer
     from ..interface import Interface
     from ..components.handled import _Component
     from ._binding import _BindingManager
-    from ._overlay import _OverlayManager
 
 
-# TODO: Implement a feature similar to the raw reload from previous versions of PyInterfacer, allowing to reload when changing window size (at the cost of losing state).
+# TODO: Implement condition bindings raw reloading.
+
 
 class _BackupManager:
     """
@@ -29,6 +29,14 @@ class _BackupManager:
         self.components: Dict[str, "_Component"] = {}
         self.actions = {}
         self.keybindings: Optional["_BindingManager"] = None
+        # Remembers the bindings for each interface, to recreate them when raw reloading.
+        # As the bindings are created for components, and the components store their interface, they can be stored all together.
+        self._interface_bindings: Dict[
+            str, List[Tuple[str, str, Callable | str, Optional[str]]]
+        ] = {
+            "condition": [],
+            "component": [],
+        }
 
         self.have_backup = False
 
@@ -62,7 +70,7 @@ class _BackupManager:
             "focus": self.focus,
             "interfaces": interfaces,
         }
-        
+
         with open(path, "w") as f:
             yaml.safe_dump(data, f)
 
@@ -82,15 +90,25 @@ class _BackupManager:
 
             pyinterfacer._current_focus = pyinterfacer._interfaces.get(data["focus"])
 
-    def reload(self, pyinterfacer: "PyInterfacer") -> None:
+    def reload(self, pyinterfacer: "PyInterfacer", raw: bool = False) -> None:
         """
         Reload the last saved state.
 
         :param pyinterfacer: PyInterfacer's object instance.
         """
 
-        pyinterfacer._interfaces = self.interfaces.copy()
-        pyinterfacer._components = self.components.copy()
+        if raw:
+            for interface_file in self._interface_files:
+                with open(interface_file, "r") as f:
+                    pyinterfacer._parse_interface(yaml.safe_load(f))
+
+            # Recover the bindings for each component from the backup
+            for binding in self._interface_bindings["component"]:
+                pyinterfacer.bind(*binding)
+        else:
+            pyinterfacer._interfaces = self.interfaces.copy()
+            pyinterfacer._components = self.components.copy()
+
         pyinterfacer._current_focus = pyinterfacer._interfaces.get(self.focus)
         pyinterfacer._component_action_mapping = self.actions.copy()
         pyinterfacer._bindings = self.keybindings
@@ -119,5 +137,24 @@ class _BackupManager:
         self.components = pyinterfacer._components.copy()
         self.actions = pyinterfacer._component_action_mapping.copy()
         self.keybindings = pyinterfacer._bindings
+
+        # Creates a backup of the data needed to recreate the bindings for each interface.
+        for interface in self.interfaces:
+            bindings = self.interfaces[interface]._bindings.bindings
+            self._interface_bindings["component"].extend(
+                [
+                    (
+                        (
+                            b._from_component.id
+                            if b._type == "component"
+                            else b._to_component.id
+                        ),
+                        b._from_attr if b._type == "component" else b._to_attr,
+                        b._to_component.id if b._type == "component" else b._callback,
+                        b._to_attr,
+                    )
+                    for b in bindings["component"].values()
+                ]
+            )
 
         self.have_backup = True
