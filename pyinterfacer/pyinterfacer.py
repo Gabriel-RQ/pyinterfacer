@@ -117,13 +117,15 @@ class PyInterfacer(metaclass=Singleton):
         self._component_action_mapping.clear()
         self._overlay.clear()
 
-    def reload(self) -> None:
+    def reload(self, raw: bool = False) -> None:
         """
         Reloads the previously save PyInterfacer state. For this to have any effect, the `backup` parameter of `PyInterfacer.unload` must be passed as `True`. Once restored, the backup will be cleared.
+
+        :param raw: If `True`, the interfaces will be reloaded from the original files (state is lost). If `False`, the interfaces will be reloaded from the stored backup (state is kept).
         """
 
         if self._backup.have_backup:
-            self._backup.reload(self)
+            self._backup.reload(self, raw)
             self._backup.clear()
 
     def init(self) -> None:
