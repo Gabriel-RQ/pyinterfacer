@@ -4,7 +4,6 @@
 """
 
 import os
-import shelve
 import yaml
 import typing
 from typing import Optional, List, Dict
@@ -17,9 +16,7 @@ if typing.TYPE_CHECKING:
     from ._overlay import _OverlayManager
 
 
-# TODO: Backup global overlay and interfaces overlays (haver to consider surfaces cant be serialized)
-# TODO: Backup interfaces bindings (maybe save the id of the binding and the function to call?). Cant save the component itself because it contains a Surface.
-
+# TODO: Implement a feature similar to the raw reload from previous versions of PyInterfacer, allowing to reload when changing window size (at the cost of losing state).
 
 class _BackupManager:
     """
@@ -34,9 +31,6 @@ class _BackupManager:
         self.keybindings: Optional["_BindingManager"] = None
 
         self.have_backup = False
-        self.backup_path = os.path.join(
-            os.path.dirname(os.path.realpath(__file__)), "backup"
-        )
 
         self._interface_files: List[str] = []
 
@@ -50,15 +44,13 @@ class _BackupManager:
         if i not in self._interface_files:
             self._interface_files.append(i)
 
-    def save(self) -> None:
+    def save(self, path: str) -> None:
         """
-        Persists the current PyInterfacer backup data in the pre-specified backup directory.
-        This overwrites the backup each time it's called.
-        """
+        Persists the current PyInterfacer backup data in the specified backup yaml file.
+        This overwrites the backup file each time it's called.
 
-        # Creates the backup directory, if it does not exist
-        if not os.path.exists(self.backup_path):
-            os.mkdir(self.backup_path)
+        :param path: Path to the YAML backup file. It will be created if needed.
+        """
 
         # Make a raw backup of the interfaces, without preserving state
         interfaces = []
@@ -66,43 +58,29 @@ class _BackupManager:
             with open(i, "r") as f:
                 interfaces.append(yaml.safe_load(f))
 
-        # interface_bindings = {i.name: i._bindings for i in self.interfaces.values()}
-        interface_bindings = None
+        data = {
+            "focus": self.focus,
+            "interfaces": interfaces,
+        }
+        
+        with open(path, "w") as f:
+            yaml.safe_dump(data, f)
 
-        # Save to the serialized backup
-        with shelve.open(os.path.join(self.backup_path, "pyinterfacer")) as bak:
-            bak.clear()
-
-            bak["focus"] = self.focus
-            bak["actions"] = self.actions
-            bak["interfaces"] = interfaces
-            bak["bindings"] = {"keybindings": self.keybindings, "interfaces": interface_bindings}
-
-    def load(self, pyinterfacer: "PyInterfacer") -> None:
+    def load(self, pyinterfacer: "PyInterfacer", path: str) -> None:
         """
-        Loads data saved in the serialized backup file into PyInterfacer.
+        Loads data saved in the YAML backup file into PyInterfacer.
 
         :param pyinterfacer: PyInterfacer's object instance.
+        :param path: Path to the backup file.
         """
 
-        backup_file = os.path.join(self.backup_path, "pyinterfacer")
-        if not os.path.exists(backup_file):
-            raise FileNotFoundError("Could not find PyInterfacer's backup file.")
+        with open(path, "r") as f:
+            data = yaml.safe_load(f)
 
-        with shelve.open(backup_file) as bak:
-            pyinterfacer._current_focus = bak.get("focus")
-            pyinterfacer._component_action_mapping = bak.get("actions")
-            pyinterfacer._bindings = bak["bindings"]["keybindings"]
-
-            for interface in bak.get("interfaces"):
+            for interface in data["interfaces"]:
                 pyinterfacer._parse_interface(interface)
 
-            # interface_bindings = bak["bindings"]["interfaces"]
-            # if interface_bindings is not None:
-            #     for interface, binding_man in interface_bindings.items():
-            #         pyinterfacer._interfaces[interface]._bindings = binding_man
-
-        pyinterfacer._update_actions()
+            pyinterfacer._current_focus = pyinterfacer._interfaces.get(data["focus"])
 
     def reload(self, pyinterfacer: "PyInterfacer") -> None:
         """
@@ -128,3 +106,18 @@ class _BackupManager:
         self.actions.clear()
         self.keybindings = None
         self.have_backup = False
+
+    def backup(self, pyinterfacer: "PyInterfacer") -> None:
+        """
+        Backup the current state of PyInterfacer.
+
+        :param pyinterfacer: PyInterfacer's object instance.
+        """
+
+        self.focus = pyinterfacer._current_focus.name
+        self.interfaces = pyinterfacer._interfaces.copy()
+        self.components = pyinterfacer._components.copy()
+        self.actions = pyinterfacer._component_action_mapping.copy()
+        self.keybindings = pyinterfacer._bindings
+
+        self.have_backup = True

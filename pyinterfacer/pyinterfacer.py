@@ -53,7 +53,7 @@ class PyInterfacer(metaclass=Singleton):
         # Maps a component id (key) to an action callback (value). Used to map actions easily for Clickable components
         self._component_action_mapping: Dict[str, Callable] = {}
 
-        self.__backup = _BackupManager()
+        self._backup = _BackupManager()
 
     # Properties
 
@@ -71,12 +71,8 @@ class PyInterfacer(metaclass=Singleton):
         return self._overlay
 
     @property
-    def backup_directory_path(self) -> str:
-        return self.__backup.backup_path
-
-    @backup_directory_path.setter
-    def backup_directory_path(self, p: str) -> None:
-        self.__backup.backup_path = p
+    def backup(self) -> _BackupManager:
+        return self._backup
 
     # Loading and parsing
 
@@ -103,7 +99,7 @@ class PyInterfacer(metaclass=Singleton):
 
         if re.match(r".*\.(yaml|yml)$", file) and os.path.exists(file):
             self.__interface_queue.append(file)
-            self.__backup.remember_interface_file(file)
+            self._backup.remember_interface_file(file)
 
     def unload(self, backup: bool = False) -> None:
         """
@@ -112,8 +108,8 @@ class PyInterfacer(metaclass=Singleton):
         :param backup: Whether or not a backup of the current state should be kept. If a previous backup is stored, this will not have effect.
         """
 
-        if backup and not self.__backup.have_backup:
-            self._fill_backup_info()
+        if backup and not self._backup.have_backup:
+            self._backup.backup(self)
 
         self._current_focus = None
         self._interfaces.clear()
@@ -126,9 +122,9 @@ class PyInterfacer(metaclass=Singleton):
         Reloads the previously save PyInterfacer state. For this to have any effect, the `backup` parameter of `PyInterfacer.unload` must be passed as `True`. Once restored, the backup will be cleared.
         """
 
-        if self.__backup.have_backup:
-            self.__backup.reload(self)
-            self.__backup.clear()
+        if self._backup.have_backup:
+            self._backup.reload(self)
+            self._backup.clear()
 
     def init(self) -> None:
         """
@@ -150,23 +146,6 @@ class PyInterfacer(metaclass=Singleton):
 
                 self._parse_interface(interface_dict)
                 self.__interface_queue.pop(i)
-
-    # Backup
-
-    def persist_backup(self) -> None:
-        """
-        Saves the current PyInterfacer information in a serialized backup file. Uses the `backup_directory_path` property to determine the backup directory.
-        """
-
-        self._fill_backup_info()
-        self.__backup.save()
-
-    def load_backup(self) -> None:
-        """
-        Reloads the last saved PyInterfacer data from a serialized backup file. Uses the `backup_directory_path` property to determine the backup directory.
-        """
-
-        self.__backup.load(self)
 
     # Update and render
 
@@ -430,17 +409,6 @@ class PyInterfacer(metaclass=Singleton):
 
             if isinstance(c, _HandledClickable):
                 c.action = self._components[id_]
-
-    def _fill_backup_info(self) -> None:
-        """Fills the backup information with the current PyInterfacer state."""
-
-        self.__backup.have_backup = True
-        self.__backup.focus = self._current_focus.name if self._current_focus else None
-        self.__backup.interfaces = self._interfaces.copy()
-        self.__backup.components = self._components.copy()
-        self.__backup.actions = self._component_action_mapping.copy()
-        self.__backup.overlay = self._overlay
-        self.__backup.keybindings = self._bindings
 
     # Magic operators
 
