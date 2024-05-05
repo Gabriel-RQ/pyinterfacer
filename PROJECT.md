@@ -514,3 +514,5 @@ These are just some ideas i have now, and i will have to expand that and project
 Finished most of the work in the PyInterfacer refactor (dev branch) - it's just as fast as a project without it, providing many conveniences to handle the components and interfaces. Need to keep the work on the backup manager, but the current state is already very promising. The code is now, in general, simpler, easier to read and mantain, and more extendable.
 
 Remember: To save the interface bindings i'll have to remember that: - Surfaces are not serializable (can't save the component instance itself) - Lambda functios are not serializable (the callbacks for component-callback bindings must be functions, if intended to be saved)
+
+Idea: Instead of saving a serialized file for the backup, save a custom YAML file. Serialized files may not be compatible between python versions.
