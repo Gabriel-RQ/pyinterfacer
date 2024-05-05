@@ -18,6 +18,26 @@ class _BindingManager:
     def __init__(self) -> None:
         self._bindings: Dict[UUID, _Binding] = {}
 
+    @property
+    def bindings(self) -> Dict[str, Dict[UUID, "_Binding"]]:
+        """Returns the bindings, grouped by type."""
+
+        b = {
+            "component": {},
+            "condition": {},
+            "key": {},
+        }
+
+        for k, v in self._bindings.items():
+            if isinstance(v, _ComponentBinding):
+                b["component"][k] = v
+            elif isinstance(v, _ConditionBinding):
+                b["condition"][k] = v
+            elif isinstance(v, _KeyBinding):
+                b["key"][k] = v
+
+        return b
+
     def register(self, b: "_Binding") -> UUID:
         """
         Register a new binding to be handled.
