@@ -75,6 +75,10 @@ class PyInterfacer(metaclass=Singleton):
     def backup(self) -> _BackupManager:
         return self._backup
 
+    @property
+    def current_focus(self) -> Optional[Interface]:
+        return self._current_focus
+
     # Loading and parsing
 
     def load_all(self, path: str) -> None:

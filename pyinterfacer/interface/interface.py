@@ -17,6 +17,7 @@ from ..managers import (
 )
 from ..groups import ComponentGroup, ClickableGroup, HoverableGroup, InputGroup
 from ..components.handled import _Component, DefaultComponentTypes
+from ..components.handled._components import _HandledComponent
 from ..util import percent_to_float
 
 if typing.TYPE_CHECKING:
@@ -50,7 +51,7 @@ class Interface:
         self._bg_image: Optional[pygame.Surface] = None
 
         self._group = pygame.sprite.Group()  # main component group
-        self._subgroup = pygame.sprite.Group()  # external sprites group
+        self._subgroups: List[pygame.sprite.Group] = []  # external sprites group
         self._component_type_groups: Dict[str, ComponentGroup] = {}
 
         self._components: List[_Component] = []
@@ -101,7 +102,11 @@ class Interface:
         """
 
         self._group.update(dt=dt)
-        self._subgroup.update(dt=dt)
+
+        if len(self._subgroups) > 0:
+            for g in self._subgroups:
+                g.update(dt=dt)
+
         self._bindings.handle()
 
     def draw(self, surface: pygame.Surface) -> None:
@@ -123,8 +128,10 @@ class Interface:
         # Renders the components
         self._group.draw(surface)
 
-        # Render the subgroup
-        self._subgroup.draw(surface)
+        # Render the subgroups
+        if len(self._subgroups) > 0:
+            for g in self._subgroups:
+                g.draw(surface)
 
         # Renders the overlay
         self._overlay.render(surface)
@@ -220,7 +227,7 @@ class Interface:
         c2: Union[_Component, Callable],
         a2: Optional[str] = None,
     ) -> "UUID":
-        if isinstance(c2, _Component) and a2 is not None:
+        if isinstance(c2, _HandledComponent) and a2 is not None:
             b = _ComponentBinding("component")
             b.set_component_binding((c1, a1), (c2, a2))
         elif callable(c2):
@@ -265,7 +272,8 @@ class Interface:
         :param group: A pygame Group.
         """
 
-        self._subgroup.add(group)
+        if group not in self._subgroups:
+            self._subgroups.append(group)
 
     # Internal methods
 
@@ -277,7 +285,7 @@ class Interface:
         try:
             img = pygame.image.load(os.path.abspath(bg)).convert()
 
-            if self.size == img.get_size():
+            if self.size != img.get_size():
                 img = pygame.transform.scale(img, self.size)
             self._bg_image = img
         except:
@@ -317,7 +325,7 @@ class Interface:
             if "id" not in component:
                 component["id"] = "_"
 
-            component["pos"] = (component["x"], component["y"])
+            component["pos"] = (component.get("x"), component.get("y"))
             component["size"] = (component.get("width"), component.get("height"))
 
             # instantiates a component according to it's type
