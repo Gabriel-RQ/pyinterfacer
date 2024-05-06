@@ -6,16 +6,18 @@
 import pygame
 
 from typing import List, Tuple, Optional, override
-from ..components.handled import (
-    _Component,
-    _HandledClickable,
-    _HandledHoverable,
-    _HandledGetInput,
-)
+from ..components.handled._components import _HandledComponent
+from ..components.standalone._hoverable import _Hoverable
+from ..components.standalone._clickable import _Clickable
+from ..components.standalone._get_input import _GetInput
 
 
-def _filter_components(component: _Component, interfaces: Tuple[str, ...]) -> bool:
-    return isinstance(component, _Component) and component.interface in interfaces
+def _filter_components(
+    component: _HandledComponent, interfaces: Tuple[str, ...]
+) -> bool:
+    return (
+        isinstance(component, _HandledComponent) and component.interface in interfaces
+    )
 
 
 class ComponentGroup(pygame.sprite.Group):
@@ -93,8 +95,8 @@ class ClickableGroup(ComponentGroup):
             sprites = self.sprites()
 
         for sprite in sprites:
-            if isinstance(sprite, _HandledClickable) or hasattr(sprite, "handle_click"):
-                sprite.handle_click(mpos)
+            if isinstance(sprite, _Clickable) or hasattr(sprite, "on_click"):
+                sprite.on_click(mpos)
 
 
 class HoverableGroup(ComponentGroup):
@@ -115,8 +117,8 @@ class HoverableGroup(ComponentGroup):
 
         mpos = pygame.mouse.get_pos()
         for sprite in sprites:
-            if isinstance(sprite, _HandledHoverable):
-                sprite.handle_hover(mpos)
+            if isinstance(sprite, _Hoverable):
+                sprite.on_hover(mpos)
 
 
 class ButtonGroup(ClickableGroup, HoverableGroup):
@@ -139,9 +141,9 @@ class InputGroup(ClickableGroup, HoverableGroup):
             sprites = self.sprites()
 
         for sprite in sprites:
-            if isinstance(sprite, _HandledGetInput):
+            if isinstance(sprite, _GetInput):
                 match event.type:
                     case pygame.KEYDOWN:
-                        sprite.handle_input(event.key)
+                        sprite.on_input(event.key)
                     case pygame.TEXTINPUT | pygame.TEXTEDITING:
-                        sprite.handle_input(event.text)
+                        sprite.on_input(event.text)
