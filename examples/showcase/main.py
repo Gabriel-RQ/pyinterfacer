@@ -7,10 +7,12 @@ from pyinterfacer import PyInterfacer
 WINDOW_SIZE = WIDTH, HEIGHT = 800, 600
 display = pygame.display.set_mode(WINDOW_SIZE, 0, 32)
 
-PyInterfacer.load("interface.yaml")
-PyInterfacer.change_focus("interface")
+interfacer = PyInterfacer()
+interfacer.load("interface.yaml")
+interfacer.init()
+interfacer.go_to("interface")
 
-i = PyInterfacer.get_focused()
+i = interfacer.current_focus
 
 
 def draw_grid(surf: pygame.Surface):
@@ -30,9 +32,9 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-        PyInterfacer.handle_event(event)
+        interfacer.handle_event(event)
 
-    PyInterfacer.handle()
+    interfacer.handle()
     draw_grid(display)
 
     pygame.display.flip()
