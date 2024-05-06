@@ -12,6 +12,10 @@ from typing import Optional, Union, Tuple
 _Color = Union[pygame.Color, str, Tuple[int, int, int]]
 
 
+if not pygame.freetype.get_init():
+    pygame.freetype.init()
+
+
 class Font:
     """Stores font information and handles text rendering. Uses the pygame.freetype module."""
 
@@ -47,6 +51,7 @@ class Font:
 
         self._font.antialiased = antialiased
         self._font.fgcolor = pygame.Color(color)
+
         if bg_color is not None:
             self._font.bgcolor = pygame.Color(bg_color)
         self._font.rotation = rotation

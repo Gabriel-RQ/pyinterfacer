@@ -5,18 +5,34 @@
 
 import pygame
 
-from typing import List, Tuple, Optional
-from ..components import Component, Clickable, Hoverable, Input
+from typing import List, Tuple, Optional, override
+from ..components.handled._components import _HandledComponent
+from ..components.standalone._hoverable import _Hoverable
+from ..components.standalone._clickable import _Clickable
+from ..components.standalone._get_input import _GetInput
 
 
-def _filter_components(component: Component, interfaces: Tuple[str, ...]) -> bool:
-    return isinstance(component, Component) and component.interface in interfaces
+def _filter_components(
+    component: _HandledComponent, interfaces: Tuple[str, ...]
+) -> bool:
+    return (
+        isinstance(component, _HandledComponent) and component.interface in interfaces
+    )
 
 
 class ComponentGroup(pygame.sprite.Group):
     """Base container for Component objects."""
 
-    def update(self, interfaces: Optional[Tuple[str, ...]] = None) -> None:
+    @override
+    def update(
+        self, interfaces: Optional[Tuple[str, ...]] = None, *args, **kwargs
+    ) -> None:
+        """
+        Same as `pygame.sprite.Group.update`, extended with interface filtering.
+
+        :param interfaces: Tuple of the interfaces that should be updated.
+        """
+
         if interfaces is not None and len(interfaces) > 0:
             sprites = filter(
                 lambda c: _filter_components(c, interfaces), self.sprites()
@@ -25,13 +41,20 @@ class ComponentGroup(pygame.sprite.Group):
             sprites = self.sprites()
 
         for sprite in sprites:
-            sprite.update()
+            sprite.update(*args, **kwargs)
 
+    @override
     def draw(
         self,
         surface: pygame.Surface,
         interfaces: Optional[Tuple[str, ...]] = None,
     ) -> List:
+        """
+        Same as `pygame.sprite.Group.draw`, extended with interface filtering.
+
+        :param interfaces: Tuple of the interfaces that should be drawn.
+        """
+
         # Filter the sprites
         if interfaces is not None and len(interfaces) > 0:
             sprites = filter(
@@ -56,10 +79,13 @@ class ComponentGroup(pygame.sprite.Group):
 class ClickableGroup(ComponentGroup):
     """Specialized group for handling Clickable components."""
 
-    def handle_click(self, interfaces: Optional[Tuple[str, ...]] = None) -> None:
+    def handle_click(
+        self, mpos: Tuple[int, int], interfaces: Optional[Tuple[str, ...]] = None
+    ) -> None:
         """
         Emits an activation for all the Clickable components in the group to check if they received a click. If `interfaces` is provided, emits the activation only for the components in the specified interfaces.
 
+        :param mpos: Mouse position at event time.
         :param interfaces: Filter the Clickable components that will receive the activation.
         """
 
@@ -70,10 +96,9 @@ class ClickableGroup(ComponentGroup):
         else:
             sprites = self.sprites()
 
-        mpos = pygame.mouse.get_pos()
         for sprite in sprites:
-            if isinstance(sprite, Clickable) or hasattr(sprite, "handle_click"):
-                sprite.handle_click(mpos)
+            if isinstance(sprite, _Clickable) or hasattr(sprite, "on_click"):
+                sprite.on_click(mpos)
 
 
 class HoverableGroup(ComponentGroup):
@@ -94,8 +119,8 @@ class HoverableGroup(ComponentGroup):
 
         mpos = pygame.mouse.get_pos()
         for sprite in sprites:
-            if isinstance(sprite, Hoverable):
-                sprite.handle_hover(mpos)
+            if isinstance(sprite, _Hoverable):
+                sprite.on_hover(mpos)
 
 
 class ButtonGroup(ClickableGroup, HoverableGroup):
@@ -107,7 +132,7 @@ class InputGroup(ClickableGroup, HoverableGroup):
         """
         Handles input for all of the Input components in the group. If `interfaces` is provided, handles the input only for the components in the specified interfaces.
 
-        :param interfaces: Filter the Input components that will receive the activation.
+        :param interfaces: Filter the Input components that will receive the user input.
         """
 
         if interfaces is not None and len(interfaces) > 0:
@@ -118,9 +143,9 @@ class InputGroup(ClickableGroup, HoverableGroup):
             sprites = self.sprites()
 
         for sprite in sprites:
-            if isinstance(sprite, Input):
+            if isinstance(sprite, _GetInput):
                 match event.type:
                     case pygame.KEYDOWN:
-                        sprite.handle_input(event.key)
+                        sprite.on_input(event.key)
                     case pygame.TEXTINPUT | pygame.TEXTEDITING:
-                        sprite.handle_input(event.text)
+                        sprite.on_input(event.text)

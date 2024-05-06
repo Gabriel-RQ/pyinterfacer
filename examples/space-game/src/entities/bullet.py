@@ -1,4 +1,5 @@
 import pygame
+from pyinterfacer import interfacer as PyInterfacer
 
 
 class Bullet(pygame.sprite.Sprite):
@@ -19,16 +20,19 @@ class Bullet(pygame.sprite.Sprite):
         self.image.fill(color)
         self.rect = self.image.get_rect(center=(self.x, self.y))
 
-    def update(self) -> None:
+    def update(self, *args, **kwargs) -> None:
         self.y -= self.speed
         self.rect = self.image.get_rect(center=(self.x, self.y))
 
 
 class BulletGroup(pygame.sprite.Group):
-    def update(self) -> None:
-        for sprite in self.sprites():
-            if sprite.rect.bottom < 0:
-                self.remove(sprite)
+    def update(self, *args, **kwargs) -> None:
+        for sprite in self:
+            if (
+                sprite.rect.bottom < 0
+                or sprite.rect.top > PyInterfacer.current_focus.height
+            ):
+                sprite.kill()
                 continue
 
-            sprite.update()
+            sprite.update(*args, **kwargs)

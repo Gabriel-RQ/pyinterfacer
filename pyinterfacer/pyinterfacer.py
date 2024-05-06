@@ -1,500 +1,177 @@
 """
-@author: Gabriel RQ
-@description: PyInterfacer class. This is the main class of the library, and it manages all the loaded interfaces.
+TODO: Create the new version of PyInterfacer, using the Singleton pattern.
+
+PyInterfacer will be responsible of:
+ - Parsing and loading the interfaces
+ - Managing the backups
+ - Storing metadata
+ - Handling KeyBindings
+ - Handling global overlays
+ - Handling the current interface
 """
 
 import pygame
-import yaml
 import os
 import re
+import typing
+import yaml
 
-from typing import Optional, Dict, Callable, Union, Tuple, Literal, Any, overload
-from enum import Enum
-from .interface import Interface
-from .groups import *
-from .components import *
-from .util._overlay import _OverlayManager
-from .util._backup import _BackupManager
-from .util._bindings import _KeyBinding
+from .interface import Interface, _ConversionMapping
+from .components.handled import _HandledGetInput
+from .components.standalone._clickable import _Clickable
+from .managers import _OverlayManager, _BackupManager, _BindingManager, _KeyBinding
+from .util import Singleton
+from typing import Optional, Dict, Callable, Union, Literal, overload
 
-
-"""
-PROPOSAL: Add an 'after' method. It should receive an amount of time and a callback to be executed after the time is reached.
-
-PROPOSAL: Add a 'parent' attribute to interfaces with display type 'overlay', allowing to set them as overlays to another interface, instead of just global overlays.
-
-TODO: Find a way to backup bindings (keybindings are an exception, since they operate at global level).
-Maybe i can have a 'binding_mapping' at _BackupManager. This would be cool to allow reloading everything after unloading, without having to call any other function to reload bindings as well.
-"""
+if typing.TYPE_CHECKING:
+    from .components.handled import _Component
+    from .groups import ComponentGroup
 
 
-class PyInterfacer:
-    """PyInterfacer interface manager."""
+class PyInterfacer(metaclass=Singleton):
+    def __init__(self) -> None:
 
-    _display: pygame.Surface = None
-    _overlay = _OverlayManager()
-    _current_focus: Optional[Interface] = None
-    _delta_time: float = 0
-    _paused = False
-    __backups = _BackupManager()
+        # Stores the file paths for the interfaces queued to be loaded
+        self.__interface_queue = []
 
-    # Stores all the interfaces. Each key represents an interface name.
-    INTERFACES: Dict[str, Interface] = {}
-    # Stores all the components. Each key represents an id.
-    COMPONENTS: Dict[str, Component] = {}
+        # Stores all the interfaces. Each key represents an interface name.
+        self._interfaces: Dict[str, Interface] = {}
+        # Stores all the components. Each key represents an id.
+        self._components: Dict[str, "_Component"] = {}
 
-    # Stores all the key bindings. Each key represents a pygame key constant.
-    _KEY_BINDINGS: Dict[int, _KeyBinding] = {}
-
-    # Maps a component id (key) to an action callback (value). Used to map actions easily for Clickable components
-    _COMPONENT_ACTION_MAPPING: Dict[str, Callable] = {}
-
-    # Maps a component type (key) a component class (value). Used to handle conversion from YAML loaded components to their instances
-    _COMPONENT_CONVERSION_TABLE: Dict[str, Component] = {
-        "animation": Animation,
-        "button": Button,
-        "clickable": Clickable,
-        "component": Component,
-        "hoverable": Hoverable,
-        "image": Image,
-        "input": Input,
-        "paragraph": Paragraph,
-        "spritesheet-animation": SpritesheetAnimation,
-        "text-button": TextButton,
-        "text": Text,
-    }
-    # Maps a component type (key) to a component group. Used to handle the creation of specific groups for some component types. Component types not in this dictionary are added to a ComponentGroup by default
-    _GROUP_CONVERSION_TABLE: Dict[str, ComponentGroup] = {
-        "clickable": ClickableGroup,
-        "hoverable": HoverableGroup,
-        "button": ButtonGroup,
-        "text-button": ButtonGroup,
-        "input": InputGroup,
-    }
-
-    @classmethod
-    def set_display(cls, display: pygame.Surface) -> None:
-        """
-        Sets the display to render to.
-
-        :param display: Pygame Surface.
-        """
-
-        cls._display = display
-        cls._overlay.set_overlay(
-            pygame.Surface((cls._display.get_size()), pygame.SRCALPHA).convert_alpha()
+        self._display: Optional[pygame.Surface] = (
+            pygame.display.get_surface() if pygame.display.get_active() else None
         )
 
-    @classmethod
-    def set_delta_time(cls, dt: float) -> None:
+        self._overlay = _OverlayManager(
+            self.display.get_size() if self.display else (0, 0)
+        )
+        self._bindings = _BindingManager()
+
+        self._current_focus: Optional[Interface] = None
+        self._paused = False
+
+        # Maps a component id (key) to an action callback (value). Used to map actions easily for Clickable components
+        self._component_action_mapping: Dict[str, Callable] = {}
+
+        self._backup = _BackupManager()
+
+    # Properties
+
+    @property
+    def display(self) -> Optional[pygame.Surface]:
+        return self._display
+
+    @display.setter
+    def display(self, d: pygame.Surface) -> None:
+        self._display = d
+        self._overlay.change_size(self.display.get_size())
+
+    @property
+    def overlay(self) -> _OverlayManager:
+        return self._overlay
+
+    @property
+    def backup(self) -> _BackupManager:
+        return self._backup
+
+    @property
+    def current_focus(self) -> Optional[Interface]:
+        return self._current_focus
+
+    # Loading and parsing
+
+    def load_all(self, path: str) -> None:
         """
-        Sets the delta time for the current frame.
-
-        :param dt: Delta time.
-        """
-
-        cls._delta_time = dt
-
-    @classmethod
-    def get_delta_time(cls) -> float:
-        """Returns the delta time for the current frame."""
-
-        return cls._delta_time
-
-    @classmethod
-    def load_all(cls, path: str) -> None:
-        """
-        Loads all the interface files in a directory.
+        Inserts all the interface files in the specified directory in the loading queue.
 
         :param path: Path to the directory containing the YAML interface files.
         """
 
         p = os.path.abspath(path)
-        if os.path.exists(p):
-            for interface_file in os.listdir(p):
-                cls.load(os.path.join(p, interface_file))
-        else:
-            raise InvalidInterfaceDirectoryException(path)
+        if not os.path.exists(p):
+            raise _InvalidInterfaceDirectoryException(path)
 
-    @classmethod
-    def load(cls, file: str) -> None:
+        for interface_file in os.listdir(p):
+            self.load(os.path.join(p, interface_file))
+
+    def load(self, file: str) -> None:
         """
-        Loads the specified interface file.
+        Inserts the specified interface path into the loading queue.
 
         :param file: Path to the YAML interface file.
         """
 
-        if re.match(r".*\.(yaml|yml)$", file):
-            with open(file, "r") as interface_file:
+        if re.match(r".*\.(yaml|yml)$", file) and os.path.exists(file):
+            self.__interface_queue.append(file)
+            self._backup.remember_interface_file(file)
+
+    def unload(self, backup: bool = False) -> None:
+        """
+        Removes all loaded interfaces, components, overlays and action mappings.
+
+        :param backup: Whether or not a backup of the current state should be kept. If a previous backup is stored, this will not have effect.
+        """
+
+        if backup and not self._backup.have_backup:
+            self._backup.backup(self)
+
+        self._current_focus = None
+        self._interfaces.clear()
+        self._components.clear()
+        self._component_action_mapping.clear()
+        self._overlay.clear()
+
+    def reload(self, raw: bool = False) -> None:
+        """
+        Reloads the previously save PyInterfacer state. For this to have any effect, the `backup` parameter of `PyInterfacer.unload` must be passed as `True`. Once restored, the backup will be cleared.
+
+        :param raw: If `True`, the interfaces will be reloaded from the original files (state is lost). If `False`, the interfaces will be reloaded from the stored backup (state is kept).
+        """
+
+        if self._backup.have_backup:
+            self._backup.reload(self, raw)
+            self._backup.clear()
+
+    def init(self) -> None:
+        """
+        Initializes the interfaces in the loading queue.
+        """
+
+        for interface in self.__interface_queue:
+            with open(interface, "r") as interface_file:
                 interface_dict: Dict = yaml.safe_load(interface_file)
 
                 if interface_dict is None:
-                    raise EmptyInterfaceFileException()
+                    raise _EmptyInterfaceFileException()
 
                 if (
                     "interface" not in interface_dict
                     or "components" not in interface_dict
                 ):
-                    raise InvalidInterfaceFileException()
+                    raise _InvalidInterfaceFileException()
 
-                cls._parse_interface(interface_dict)
-                cls.__backups.remember_interface_file(file)
+                self._parse_interface(interface_dict)
 
-    @classmethod
-    def unload(cls, backup: bool = False) -> None:
+        self.__interface_queue.clear()
+
+    # Update and render
+
+    def handle(self, dt: float = 1) -> None:
         """
-        Removes all loaded interfaces, components, overlays and action mappings.
-
-        :param backup: Whether or not a backup of the current state should be kept.
-        """
-
-        if backup:
-            cls.__backups.have_backup = True
-            cls.__backups.focus = cls._current_focus.name
-            cls.__backups.interfaces = cls.INTERFACES.copy()
-            cls.__backups.components = cls.COMPONENTS.copy()
-            cls.__backups.actions = cls._COMPONENT_ACTION_MAPPING.copy()
-
-        cls._current_focus = None
-        cls._overlay.clear(backup)
-        cls.INTERFACES.clear()
-        cls.COMPONENTS.clear()
-        cls._COMPONENT_ACTION_MAPPING.clear()
-
-    @classmethod
-    def dump(cls, to: str) -> None:
-        """
-        Dumps a serialized backup file of the current backup state. The interfaces are saved from their file.
-
-        :param to: Path of where to store the file.
+        Calls `Interface.handle` in the currently focused interface. Also handles the global overlay.
         """
 
-        cls.__backups.dump(to)
-
-    @classmethod
-    def reload(cls, raw: bool = False) -> None:
-        """
-        Reloads the previously saved PyInterfacer state. For this to have any effect, the `backup` parameter of `PyInterfacer.unload` must be passed as `True`. Once restored, the backup will be cleared.
-
-        :param raw: Wheter or not the interfaces should be restored from previous state, or reloaded from the data loaded from YAML declaration.
-        """
-
-        if cls.__backups.have_backup:
-            cls.__backups.restore(cls, raw)
-            cls.__backups.clear()
-
-    @classmethod
-    def reload_from_dump(cls, path: str) -> None:
-        """
-        Reloads previously saved PyInterfacer state from serialized dumped data. This will overwrite any previous backup. Once restored, the backup will be cleared. The serialized dump file is not modified.
-        """
-
-        if cls.__backups.have_backup:
-            cls.__backups.load(path)
-            cls.__backups.restore(cls, from_dump=True)
-            cls.__backups.clear()
-
-    @classmethod
-    def inject(cls, components: Tuple[Dict[str, Any]], into: str) -> None:
-        """
-        Injects components into an interface. This allows to load programatically created components into any interface at runtime.
-
-        :param components: A tuple of components dictionaries in the format {type: ..., id: ..., attribute: value, ...}.
-        :param into: Interface to load the components into.
-        """
-
-        i = cls.get_interface(into)
-
-        if i is not None:
-            i._parse_components(components)
-            cls.COMPONENTS.update(i.component_dict())
-
-            # Calls 'after load' only for the new, injected components
-            new_ids = tuple(c["id"] for c in components)
-            for comp in filter(lambda c: c.id in new_ids, i.components):
-                comp.after_load(i)
-
-            cls._update_actions()
-
-    @classmethod
-    def _parse_interface(cls, interface_dict: Dict):
-        """
-        Parses a interface file from it's YAML declaration.
-
-        :param interface_dict: Dictionary loaded from the YAML file.
-        """
-
-        # Checks if the display type is specified
-        if "display" not in interface_dict or interface_dict["display"] not in (
-            "default",
-            "grid",
-            "overlay",
-        ):
-            raise InvalidDisplayTypeException(interface_dict["interface"])
-
-        # Checks if grid display declaration is complete
-        if interface_dict["display"] == "grid" and (
-            "rows" not in interface_dict or "columns" not in interface_dict
-        ):
-            raise InvalidDisplayTypeException(interface_dict["interface"])
-
-        # Sets the conversion table for the interfaces
-        Interface.set_conversion_tables(
-            component=cls._COMPONENT_CONVERSION_TABLE,
-            group=cls._GROUP_CONVERSION_TABLE,
-        )
-
-        # Checks if a display has been set, if not, fallback to the display initialized from pygame.display.set_mode
-        if cls._display is None:
-            if pygame.display.get_active():
-                cls.set_display(pygame.display.get_surface())
-            else:
-                raise UndefinedDisplaySurfaceException()
-
-        # Checks if any component style class has been defined for the interface
-        if "styles" in interface_dict and len(interface_dict["styles"]) > 0:
-            s = {style["name"]: style for style in interface_dict["styles"]}
-        else:
-            s = None
-
-        # Creates a new interface and stores it
-        i = Interface(
-            name=interface_dict.get("interface"),
-            background=interface_dict.get("background"),
-            size=cls._display.get_size(),
-            components=interface_dict.get("components"),
-            display=interface_dict.get("display"),
-            rows=interface_dict.get("rows"),
-            columns=interface_dict.get("columns"),
-            styles=s,
-        )
-        cls.INTERFACES[i.name] = i
-        cls.COMPONENTS.update(i.component_dict())
-
-        for c in i.components:
-            c.after_load(i)
-
-        # Updates actions for Clickable components
-        cls._update_actions()
-
-        if i.display == "overlay":
-            cls._overlay.add_interface_target(i)
-
-    @classmethod
-    def add_custom_components(cls, components: Dict[str, Component]) -> None:
-        """
-        Inserts custom components in the component conversion table, allowing them to be used with the library. If the specified component types are already in the conversion table, they will be overwritten by the provided ones.
-
-        :param components: A dictionary where the `keys` represent the type of the component, and the `values` represent a reference to the component class.
-        """
-
-        cls._COMPONENT_CONVERSION_TABLE.update(components)
-
-    @classmethod
-    def add_custom_groups(cls, groups: Dict[str, ComponentGroup]) -> None:
-        """
-        Inserts custom component groups for the specified component types in the group conversion table, allowing it to be used with the library. If `type` is already in the group conversion table, it will be overwritten.
-
-        :param groups: A dictionary where the `keys` represent the type of the component, and the `values` represent a reference to the group class.
-        """
-
-        cls._GROUP_CONVERSION_TABLE.update(groups)
-
-    @classmethod
-    def get_by_id(cls, id_: str) -> Optional[Component]:
-        """
-        Retrieves a component instance, searching by it's `id`.
-
-        :param id_: The component's `id`.
-        :return: The component instance, if found, otherwise `None`.
-        """
-
-        return cls.COMPONENTS.get(id_)
-
-    @classmethod
-    def update(cls) -> None:
-        """
-        Updates the currently currently focused interface and the interfaces in the overlay.
-        """
-
-        if cls._current_focus is not None:
-            cls._current_focus.update()
-
-        cls._overlay.update_interfaces()
-
-    @classmethod
-    def draw(cls) -> None:
-        """
-        Draws the currently focused interface to the display.
-        """
-
-        if cls._display is None:
+        if self._display is None:
             return
 
-        if cls._current_focus is not None:
-            if cls._current_focus.display != "overlay":
-                cls._current_focus.draw(cls._display)
+        if self._current_focus is not None and not self._paused:
+            self._current_focus.handle(self._display, dt)
 
-        if cls._overlay is not None:
-            cls._overlay.render(cls._display)
+        self._overlay.update_interfaces(dt)
+        self._overlay.render(self._display)
 
-    @classmethod
-    def handle(cls) -> None:
-        """
-        Updates, renders and handles hover events in the currently focused interface.
-        """
-
-        if (cls._current_focus is not None) and (not cls._paused):
-            cls.update()
-            cls.draw()
-            cls.handle_hover()
-
-    @classmethod
-    def pause(cls) -> None:
-        """Pauses the currently focused interface."""
-
-        cls._paused = True
-
-    @classmethod
-    def unpause(cls) -> None:
-        """Unpauses the currently focused interface."""
-
-        cls._paused = False
-
-    @overload
-    @classmethod
-    def add_to_overlay(
-        cls, source: pygame.Surface, dest: pygame.Rect | Tuple[int, int]
-    ) -> None:
-        """
-        Renders a surface to the global overlay using `pygame.Surface.blit`.
-
-        :param source: A pygame Surface.
-        :param dest: A pygame Rect or a Coordinate (x, y).
-        """
-
-        ...
-
-    @overload
-    @classmethod
-    def add_to_overlay(cls, blit_sequence: Tuple[Tuple, ...]) -> None:
-        """
-        Renders many images to the global overlay using `pygame.Surface.blits`.
-
-        :param blit_sequence: Tuples in the format (source, dest, area?, special_flags?).
-        """
-
-        ...
-
-    @classmethod
-    def add_to_overlay(
-        cls,
-        p1: Tuple | pygame.Surface,
-        p2: Optional[pygame.Rect | Tuple[int, int]] = None,
-    ) -> None:
-        if cls._overlay is None:
-            return
-
-        # if drawing many images
-        if isinstance(p1, tuple) and p2 is None:
-            cls._overlay.add_many_targets(p1)
-        elif isinstance(p1, pygame.Surface) and p2 is not None:
-            cls._overlay.add_single_target(p1, p2)
-
-    @classmethod
-    def clear_overlay(cls) -> None:
-        """
-        Clears the overlay surface.
-        """
-
-        if cls._overlay is not None:
-            cls._overlay.clear()
-
-    @classmethod
-    def set_overlay_opacity(cls, o: int) -> None:
-        """
-        Sets the overlay opacity.
-
-        :param o: An integer value ranging from 0 to 255.
-        """
-
-        if cls._overlay is not None:
-            cls._overlay.set_opacity(o)
-
-    @classmethod
-    def get_overlay_opacity(cls) -> int:
-        """Returns the overlay opacity. If the overlay is not set, returns '-1'."""
-
-        if cls._overlay is None:
-            return -1
-
-        return cls._overlay.get_opacity()
-
-    @classmethod
-    def restore_overlay(cls) -> None:
-        """Restores the last rendered surfaces to the overlay."""
-
-        if cls._overlay is not None:
-            cls._overlay.restore()
-
-    @classmethod
-    def change_focus(cls, interface: Optional[str]) -> None:
-        """
-        Changes the currently focused interface.
-
-        :param interface: Name of the interface to give focus.
-        """
-
-        if interface is None:
-            cls._current_focus = None
-            return
-
-        if interface in cls.INTERFACES:
-            cls._current_focus = cls.INTERFACES[interface]
-
-    @classmethod
-    def get_focused(cls) -> Optional[Interface]:
-        """
-        Gives access to the currently focused interface instance.
-
-        :return: Currently focused interface.
-        """
-
-        return cls._current_focus
-
-    @classmethod
-    def get_interface(cls, interface: str) -> Optional[Interface]:
-        """
-        Retrieves an interface instance by it's name.
-
-        :param interface: Name of the interface.
-        :return: The interface instance, if found, otherwise `None`.
-        """
-
-        return cls.INTERFACES.get(interface)
-
-    @classmethod
-    def emit_click(cls) -> None:
-        """
-        Emits a click event on the currently focused interface.
-        """
-
-        if cls._current_focus is not None:
-            cls._current_focus.emit_click()
-
-    @classmethod
-    def emit_input(cls, event) -> None:
-        """
-        Emits an input event in the currently focused interface.
-
-        :param event: Pygame KEYDOWN event.
-        """
-
-        if cls._current_focus is not None:
-            cls._current_focus.emit_input(event)
-
-    @classmethod
-    def handle_event(cls, event: pygame.Event) -> None:
+    def handle_event(self, event: pygame.Event) -> None:
         """
         Handles pygame events. This let's PyInterfacer handle it's Clickable and Input components, for example.
 
@@ -504,35 +181,108 @@ class PyInterfacer:
         match event.type:
             case pygame.MOUSEBUTTONDOWN:
                 if event.button == 1:
-                    cls.emit_click()
+                    if self._current_focus is not None:
+                        self._current_focus.emit_click(event.pos)
             case pygame.TEXTINPUT | pygame.TEXTEDITING:
-                if Input.IS_ANY_ACTIVE:
-                    cls.emit_input(event)
+                if _HandledGetInput.IS_ANY_ACTIVE and self._current_focus is not None:
+                    self._current_focus.emit_input(event)
             case pygame.KEYDOWN:
-                if Input.IS_ANY_ACTIVE:
-                    cls.emit_input(event)
+                if _HandledGetInput.IS_ANY_ACTIVE and self._current_focus is not None:
+                    self._current_focus.emit_input(event)
                 else:
-                    if (b := cls._KEY_BINDINGS.get(event.key)) is not None:
-                        b.handle(type_="down")
+                    self._bindings.handle_single(event.key, type_="down")
             case pygame.KEYUP:
-                if (
-                    not Input.IS_ANY_ACTIVE
-                    and (b := cls._KEY_BINDINGS.get(event.key)) is not None
-                ):
-                    b.handle(type_="up")
+                if not _HandledGetInput.IS_ANY_ACTIVE:
+                    self._bindings.handle_single(event.key, type_="up")
 
-    @classmethod
-    def handle_hover(cls) -> None:
+    # Focus handling
+
+    def go_to(self, interface: str) -> None:
         """
-        Handles hover in the currently focused interface.
+        Changes the focus to the specified interface.
+
+        :param interface: Name of the interface to switch to.
         """
 
-        if cls._current_focus is not None:
-            cls._current_focus.handle_hover()
+        if interface is None:
+            self._current_focus = None
+            return
+
+        # If the interface does not exist, the focus will not be changed
+        if interface in self._interfaces:
+            self._current_focus = self._interfaces.get(interface)
+
+    def transition_to(self, interface: str) -> None:
+        """
+        Changes the focus to the specified interface, with a transition effect.
+
+        :param interface: Name of the interface to switch to.
+        """
+
+        raise NotImplementedError
+
+    # Utilities
+
+    def get_component(self, id_: str) -> Optional["_Component"]:
+        """
+        Retrieves a component instance, searching by it's `id`.
+
+        :param id_: The component's `id`.
+        :return: The component instance, if found, otherwise `None`.
+        """
+
+        return self._components.get(id_)
+
+    def get_interface(self, name: str) -> Optional[Interface]:
+        """
+        Retrieves an interface instance, searching by it's name.
+
+        :param interface: Name of the interface.
+        :return: The interface instance, if found, otherwise `None`.
+        """
+
+        return self._interfaces.get(name)
+
+    def add_custom_components(self, components: Dict[str, "_Component"]) -> None:
+        """
+        Inserts custom components in the component conversion table, allowing them to be used with the library. If the specified component types are already in the conversion table, they will be overwritten by the provided ones.
+
+        :param components: A dictionary where the `keys` represent the type of the component, and the `values` represent a reference to the component class.
+        """
+
+        _ConversionMapping.extend_component_table(components)
+
+    def add_custom_groups(self, groups: Dict[str, "ComponentGroup"]) -> None:
+        """
+        Inserts custom component groups for the specified component types in the group conversion table, allowing it to be used with the library. If `type` is already in the group conversion table, it will be overwritten.
+
+        :param groups: A dictionary where the `keys` represent the type of the component, and the `values` represent a reference to the group class.
+        """
+
+        _ConversionMapping.extend_group_table(groups)
+
+    def pause(self) -> None:
+        """Halts the handling of the currently focused interface."""
+
+        self._paused = True
+
+    def unpause(self) -> None:
+        """Resumes the handling of the currently focused interface."""
+
+        self._paused = False
+
+    def map_actions(self, actions: Dict[str, Callable]) -> None:
+        """
+        Maps a component to an action callback. Used to define actions for Clickable components. Components with the same ID will be mapped to the same action.
+
+        :param actions: Actions mapping in the format `{id: callback}`.
+        """
+
+        self._component_action_mapping.update(actions)
+        self._update_actions()
 
     @overload
-    @classmethod
-    def bind(cls, c1: str, a1: str, c2: str, a2: str):
+    def bind(self, c1: str, a1: str, c2: str, a2: str):
         """
         Binds a component attribute to another component attribute.
 
@@ -546,8 +296,7 @@ class PyInterfacer:
         ...
 
     @overload
-    @classmethod
-    def bind(cls, c1: str, a1: str, callback: Callable):
+    def bind(self, c1: str, a1: str, callback: Callable):
         """
         Binds a component attribute to a callback. The callback will receive the attribute value, and should return it's updated value.
 
@@ -559,28 +308,27 @@ class PyInterfacer:
 
         ...
 
-    @classmethod
-    def bind(cls, c1: str, a1: str, c2: Union[str, Callable], a2: Optional[str] = None):
+    def bind(
+        self, c1: str, a1: str, c2: Union[str, Callable], a2: Optional[str] = None
+    ):
         if isinstance(c2, str) and a2 is not None:
-            if c1 in cls.COMPONENTS and c2 in cls.COMPONENTS:
+            if c1 in self._components and c2 in self._components:
                 # binding is done at interface level
-                i = cls.get_interface(cls.COMPONENTS[c1].interface)
+                i = self._interfaces.get(self._components[c1].interface)
 
                 if i is not None:
                     return i.create_binding(
-                        cls.COMPONENTS[c1], a1, cls.COMPONENTS[c2], a2
+                        self._components[c1], a1, self._components[c2], a2
                     )
         elif callable(c2):
-
-            if c1 in cls.COMPONENTS:
-                i = cls.get_interface(cls.COMPONENTS[c1].interface)
+            if c1 in self._components:
+                i = self._interfaces.get(self._components[c1].interface)
 
                 if i is not None:
-                    return i.create_binding(cls.COMPONENTS[c1], a1, c2)
+                    return i.create_binding(self._components[c1], a1, c2)
 
-    @classmethod
     def bind_keys(
-        cls, b: Dict[int, Dict[Literal["press", "release"], Callable]]
+        self, b: Dict[int, Dict[Literal["press", "release"], Callable]]
     ) -> None:
         """
         Binds a keypress to a callback.
@@ -595,120 +343,119 @@ class PyInterfacer:
             bind = _KeyBinding(event=k)
             bind.on_press = v.get("press")
             bind.on_release = v.get("release")
+            self._bindings.register(bind)
 
-            cls._KEY_BINDINGS[k] = bind
+    # Internal methods
 
-    @classmethod
-    def when(
-        cls,
-        condition: Callable[[None], bool],
-        callback: Callable[[None], None],
-        *,
-        keep: bool = False,
-        interface: Optional[str] = None,
-    ):
+    def _parse_interface(self, interface_dict: Dict):
         """
-        Binds a condition to a callback in the currently focused interface, or in the specified interface, through `Interface.when`. This is handled at interface level.
+        Parses an interface file from it's YAML declaration.
 
-        :param condition: A function that returns a boolean indicating if the condition is met or not.
-        :param callback: A function that is executed when the condition is met.
-        :param keep: Wether to keep the binding after the condition is first met or not.
-        :param interface: The interface in which to perform the binding. If not provided, the binding will be set in the focused interface.
+        :param interface_dict: Dictionary loaded from the YAML file.
         """
 
-        if interface is not None:
-            i = cls.get_interface(interface)
+        # Checks if the display type is specified
+        if "display" not in interface_dict or interface_dict["display"] not in (
+            "default",
+            "grid",
+            "overlay",
+        ):
+            raise _InvalidDisplayTypeException(interface_dict["interface"])
+
+        # Checks if grid display declaration is complete
+        if interface_dict["display"] == "grid" and (
+            "rows" not in interface_dict or "columns" not in interface_dict
+        ):
+            raise _InvalidDisplayTypeException(interface_dict["interface"])
+
+        # Checks if a display has been set, if not, fallback to the display initialized from pygame.display.set_mode
+        if self._display is None:
+            if pygame.display.get_active():
+                self.display = pygame.display.get_surface()
+            else:
+                raise _UndefinedDisplaySurfaceException()
+
+        # Checks if any component style class has been defined for the interface
+        if "styles" in interface_dict and len(interface_dict["styles"]) > 0:
+            s = {style["name"]: style for style in interface_dict["styles"]}
         else:
-            i = cls._current_focus
+            s = None
 
-        if i is not None:
-            return cls._current_focus.when(condition, callback, keep=keep)
+        # Creates a new interface and stores it
+        i = Interface(
+            name=interface_dict.get("interface"),
+            background=interface_dict.get("background"),
+            size=self._display.get_size(),
+            components=interface_dict.get("components"),
+            display=interface_dict.get("display"),
+            rows=interface_dict.get("rows"),
+            columns=interface_dict.get("columns"),
+            styles=s,
+        )
+        self._interfaces[i.name] = i
+        self._components.update(i.component_mapping)
 
-    @classmethod
-    def map_actions(cls, actions: Dict[str, Callable]) -> None:
-        """
-        Maps a component to an action callback. Used to define actions for Clickable components. Components with the same ID will be mapped to the same action.
+        for c in i.components:
+            c.after_load(i)
 
-        :param actions: Actions mapping in the format `{id: callback}`.
-        """
+        # Updates actions for Clickable components
+        self._update_actions()
 
-        cls._COMPONENT_ACTION_MAPPING.update(actions)
-        cls._update_actions()
+        if i.display == "overlay":
+            self._overlay.add_interface_target(i)
 
-    @classmethod
-    def _update_actions(cls) -> None:
+    def _update_actions(self) -> None:
         """
         Updates actions for Clickable components using the component action mapping.
         """
 
-        if len(cls._COMPONENT_ACTION_MAPPING) == 0:
+        if len(self._component_action_mapping) == 0:
             return
 
-        for id_ in cls._COMPONENT_ACTION_MAPPING.keys():
-            c = cls.COMPONENTS.get(id_)
+        for id_ in self._component_action_mapping.keys():
+            c = self._components.get(id_)
 
-            if isinstance(c, Clickable):
-                c.action = cls._COMPONENT_ACTION_MAPPING[id_]
+            if isinstance(c, _Clickable):
+                c.action = self._component_action_mapping[id_]
 
-    @classmethod
-    def remove_component(cls, id_: str) -> None:
-        """
-        Removes the specified component from the interface.
+    # Magic operators
 
-        :param id_: The component's id.
-        """
-
-        c = cls.COMPONENTS.get(id_)
-
-        if c is not None:
-            i = cls.INTERFACES.get(c.interface)
-            i._remove_component(c)
-            del cls.COMPONENTS[id_]
+    def __getitem__(self, interface: str) -> Optional[Interface]:
+        return self._interfaces.get(interface)
 
 
-class DefaultComponentTypes(Enum):
-    """Types of all the components in the default component set."""
-
-    ANIMATION = "animation"
-    BUTTON = "button"
-    CLICKABLE = "clickable"
-    COMPONENT = "component"
-    HOVERABLE = "hoverable"
-    IMAGE = "image"
-    INPUT = "input"
-    PARAGRAPH = "paragraph"
-    SPRITESHEET_ANIMATION = "spritesheet-animation"
-    TEXT_BUTTON = "text-button"
-    TEXT = "text"
+"""
+Exceptions
+"""
 
 
-class EmptyInterfaceFileException(Exception):
+class _EmptyInterfaceFileException(Exception):
     def __init__(self) -> None:
         super().__init__("The provided YAML interface file can't be empty.")
 
 
-class InvalidInterfaceFileException(Exception):
+class _InvalidInterfaceFileException(Exception):
     def __init__(self) -> None:
         super().__init__(
             "The provided YAML interface file is not in valid format. Be sure to include the interface name and the components."
         )
 
 
-class InvalidDisplayTypeException(Exception):
+class _InvalidDisplayTypeException(Exception):
     def __init__(self, interface: str) -> None:
         super().__init__(
             f"The specified display type for the interface '{interface}' is invalid. It should be one of 'default', 'grid' or 'overlay'. Note that grid displays shoud provide 'rows' and 'columns'."
         )
 
 
-class InvalidInterfaceDirectoryException(Exception):
+class _InvalidInterfaceDirectoryException(Exception):
     def __init__(self, dir_: str) -> None:
         super().__init__(
             f"The specified directory ({dir_}) does not exist or is invalid. Could not load any interface."
         )
 
 
-class UndefinedDisplaySurfaceException(Exception):
+class _UndefinedDisplaySurfaceException(Exception):
     def __init__(self) -> None:
         super().__init__(
             "No Surface has been set as a display for PyInterfacer, and pygame.display.set_mode was not called. There's no fallback possible. Either provide a Surface or call pygame.display.set_mode."

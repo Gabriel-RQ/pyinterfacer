@@ -1,7 +1,12 @@
+"""
+@author: Gabriel RQ
+@description: Multi-line text component.
+"""
+
 import pygame
 
 from .text import Text
-from typing import List, Optional
+from typing import List, Optional, override
 
 
 class Paragraph(Text):
@@ -14,7 +19,6 @@ class Paragraph(Text):
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
-
         self.lines = lines
         self.line_height = (
             line_height if line_height is not None else self.font.size * 0.75
@@ -34,6 +38,7 @@ class Paragraph(Text):
 
         return blit_seq
 
+    @override
     def update(self, *args, **kwargs) -> None:
         lines = self._render_lines()
         # Calculates the max size for the surface
@@ -41,7 +46,6 @@ class Paragraph(Text):
         max_height = max([line[1].bottom for line in lines])
 
         self.image = pygame.Surface((max_width, max_height), pygame.SRCALPHA)
+        self.image.blits(lines)
         self._set_rect()
         self._align()
-
-        self.image.blits(self._render_lines())

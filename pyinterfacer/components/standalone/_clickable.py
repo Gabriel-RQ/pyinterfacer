@@ -1,19 +1,19 @@
 """
 @author: Gabriel RQ
-@description: Base clickable class.
+@description: Base class for clickable components.
 """
 
+from ._standalone_component import _StandaloneComponent
 from typing import Optional, Callable, Tuple
-from .component import Component
 
 
-class Clickable(Component):
+class _Clickable(_StandaloneComponent):
     """Base class for clickable components. Clickable components should inherit from this."""
 
     def __init__(
         self,
         action: Optional[Callable] = None,
-        enabled: Optional[bool] = True,
+        enabled: bool = True,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
@@ -21,12 +21,12 @@ class Clickable(Component):
         self.action = action
         self.enabled = enabled
 
-    def handle_click(self, mous_pos: Tuple[int, int]) -> None:
+    def on_click(self, mous_pos: Tuple[int, int]) -> None:
         """Checks if this component was clicked, and executes it's action if so."""
+
         if (
             self.enabled
             and self.action is not None
-            and self.rect is not None
             and self.rect.collidepoint(mous_pos)
         ):
             self.action()

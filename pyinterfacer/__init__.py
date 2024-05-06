@@ -1,5 +1,7 @@
 """
-PyInterfacer: A modular library designed to easily handle interfaces in pygame projects.
+PyInterfacer: A modular library designed to easily handle interfaces and components in pygame projects.
 """
 
-from .pyinterfacer import PyInterfacer, DefaultComponentTypes
+from .pyinterfacer import PyInterfacer
+
+interfacer = PyInterfacer()

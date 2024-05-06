@@ -15,11 +15,34 @@ if typing.TYPE_CHECKING:
 class _OverlayManager:
     """Simple manager to handle overlays."""
 
-    def __init__(self) -> None:
-        self._surface: pygame.Surface = None
+    def __init__(self, size: Tuple[int, int]) -> None:
+        self._surface: pygame.Surface = pygame.Surface(
+            size, flags=pygame.SRCALPHA
+        ).premul_alpha()
         self._render_targets = {"single": [], "many": [], "interfaces": []}
         self._render_targets_backup = None
         self._opacity = 0  # ranges from 0 to 255
+
+    @property
+    def opacity(self) -> int:
+        return self._opacity
+
+    @opacity.setter
+    def opacity(self, o: int) -> None:
+        """
+        Sets the opacity of the overlay. The opacity should range from 0 to 255, if a value below or above is provided, the closest value will be picked instead.
+
+        :param o: Integer value from 0 to 255.
+        """
+
+        self._opacity = max(0, min(o, 255))
+        self._surface.fill((0, 0, 0, self._opacity))
+        self._surface = self._surface.premul_alpha()
+
+    def change_size(self, size: Tuple[int, int]) -> None:
+        """Changes the overlay surface size."""
+
+        self._surface = pygame.Surface(size, flags=pygame.SRCALPHA).premul_alpha()
 
     def add_single_target(
         self, s: pygame.Surface, d: pygame.Rect | Tuple[int, int]
@@ -34,29 +57,9 @@ class _OverlayManager:
         self._render_targets["many"].extend(s)
 
     def add_interface_target(self, i: "Interface") -> None:
-        """Adds an interface to be rendered in the overlay."""
+        """Adds an interface to be rendered into the overlay."""
 
         self._render_targets["interfaces"].append(i)
-
-    def set_overlay(self, surf: pygame.Surface) -> None:
-        """Sets the overlay surface."""
-        self._surface = surf
-        self._surface.fill((0, 0, 0, self._opacity))  # controls the overlay opacity
-        self._surface.premul_alpha()
-
-    def set_opacity(self, o: int) -> None:
-        """
-        Sets the opacity of the overlay. The opacity should range from 0 to 255, if a value below or above is provided, the closest value will be picked instead.
-
-        :param o: Integer value from 0 to 255.
-        """
-        self._opacity = max(0, min(o, 255))
-        self._surface.fill((0, 0, 0, self._opacity))
-        self._surface.premul_alpha()
-
-    def get_opacity(self) -> int:
-        """Returns the overlay current opacity."""
-        return self._opacity
 
     def clear(self, backup: bool = True) -> None:
         """
@@ -90,21 +93,16 @@ class _OverlayManager:
 
         self._render_targets_backup = None
 
-    def render(self, surface: pygame.Surface) -> Optional[pygame.Surface]:
+    def render(self, surface: pygame.Surface):
         """
         Renders the overlay targets to the provided `surface`.
 
         :param surface: Surface to render the overlay to.
         """
 
-        # return None # completely disabled the overlay system
+        # return None # completely disables the overlay system
 
-        if self._surface is None:
-            return None
-
-        for t in self._render_targets["single"]:
-            surface.blit(*t)
-
+        surface.blits((t for t in self._render_targets["single"]))
         surface.blits(self._render_targets["many"])
 
         for i in self._render_targets["interfaces"]:
@@ -116,8 +114,8 @@ class _OverlayManager:
                 self._surface, (0, 0), special_flags=pygame.BLEND_PREMULTIPLIED
             )
 
-    def update_interfaces(self) -> None:
+    def update_interfaces(self, dt: float) -> None:
         """Calls `Interface.update` for the interfaces rendered into the overlay."""
 
         for i in self._render_targets["interfaces"]:
-            i.update()
+            i.update(dt)

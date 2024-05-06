@@ -1,28 +1,25 @@
 """
 @author: Gabriel RQ
-@description: Simple image component.
+@description: Simple static image component.
 """
 
 import os
 import pygame
 
-from .component import Component
+from ._standalone_component import _StandaloneComponent
+from typing import override
 
 
-class Image(Component):
-    """Displays an static image."""
+class Image(_StandaloneComponent):
+    """Displays a static image."""
 
-    def __init__(
-        self,
-        path: str,
-        **kwargs,
-    ) -> None:
+    def __init__(self, path: str, **kwargs) -> None:
         super().__init__(**kwargs)
 
         self.path = path
-
         self.preload_image()
 
+    @override
     def preload_image(self) -> None:
         # Tries to load the specified image
         try:
@@ -41,6 +38,3 @@ class Image(Component):
             self.image = img
             self._set_rect()
             self._align()
-
-    def update(self, *args, **kwargs) -> None:
-        return

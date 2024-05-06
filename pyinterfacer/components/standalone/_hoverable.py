@@ -1,18 +1,17 @@
 """
 @author: Gabriel RQ
-@description: Base hoverable class.
+@description: Base class for hoverable components.
 """
 
+from ._standalone_component import _StandaloneComponent
 from typing import Tuple
 
-from .component import Component
 
-
-class Hoverable(Component):
+class _Hoverable(_StandaloneComponent):
     """Base class for hoverable components."""
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
 
         self._hovered = False
 
@@ -20,12 +19,13 @@ class Hoverable(Component):
         """
         The action to perform when this component is hovered. By default this does nothing, and should be overwritten by inheriting classes.
         """
+
         pass
 
-    def handle_hover(self, mouse_pos: Tuple[int, int]) -> None:
+    def on_hover(self, mouse_pos: Tuple[int, int]) -> None:
         """Checks if this component was hovered, and executes it's `hover_action` if so."""
 
-        if self.rect is not None and self.rect.collidepoint(mouse_pos):
+        if self.rect.collidepoint(mouse_pos):
             self._hovered = True
         else:
             self._hovered = False

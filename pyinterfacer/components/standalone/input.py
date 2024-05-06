@@ -5,30 +5,28 @@
 
 import pygame
 
-from typing import Optional, Tuple, overload
+from ._get_input import _GetInput
 from .text import Text
-from .hoverable import Hoverable
+from ._hoverable import _Hoverable
+from ._clickable import _Clickable
+from typing import Optional, Union, Tuple, overload, override
+
+_Color = Union[str, Tuple[int, int, int]]
 
 
-class Input(Text, Hoverable):
-    """Simple input component."""
-
-    IS_ANY_ACTIVE = False
-
+class Input(Text, _GetInput, _Hoverable, _Clickable):
     def __init__(
         self,
-        active: bool = False,
-        bg_color: Optional[str] = None,
-        bg_focus_color: Optional[str] = None,
+        bg_color: Optional[_Color] = None,
+        bg_focus_color: Optional[_Color] = None,
+        border_focus_color: Optional[_Color] = None,
         border_radius: Optional[int] = None,
-        border_focus_color: Optional[int] = None,
         max_length: Optional[int] = None,
         hint: Optional[str] = None,
         **kwargs,
     ) -> None:
         super().__init__(**kwargs)
 
-        self.active = active
         self.bg_color = bg_color
         self.bg_focus_color = bg_focus_color
         self.border_focus_color = border_focus_color
@@ -44,49 +42,39 @@ class Input(Text, Hoverable):
             else self._fill_color.r - 1
         )
 
-    def _activate(self) -> None:
-        """Gives focus to the Input."""
-        self.active = True
-        Input.IS_ANY_ACTIVE = True
-        pygame.key.start_text_input()
-        pygame.key.set_repeat(250, 50)
-
-    def _deactivate(self) -> None:
-        """Removes focus from the Input."""
-        self.active = False
-        Input.IS_ANY_ACTIVE = False
-        pygame.key.stop_text_input()
-        pygame.key.set_repeat(0, 0)
-
-    def handle_click(self, mouse_pos: Tuple[int, int]) -> None:
+    @override
+    def on_click(self, mouse_pos: Tuple[int, int]) -> None:
         """Checks if this component was clicked, if so, activates it, otherwise inactivate it."""
 
+        # The Input component is a special case, as it inherits from _Clickable only to have it's on_click method handled by the groups.
+        # The other attributes from _Clickable are not used.
         if self.rect.collidepoint(mouse_pos):
-            self._activate()
+            self.activate()
         else:
-            self._deactivate()
+            self.deactivate()
 
     @overload
-    def handle_input(self, pressed_key: int) -> None: ...
+    def on_input(self, pressed_key: int) -> None: ...
 
     @overload
-    def handle_input(self, text: str) -> None: ...
+    def on_input(self, text: str) -> None: ...
 
-    def handle_input(self, p1: str | int) -> None:
-        """Handles text input on the component."""
+    @override
+    def on_input(self, arg: str | int):
 
         if not self.active:
             return
 
-        if isinstance(p1, str):
+        if isinstance(arg, str):
             if self.max_length is None or len(self.text) < self.max_length:
-                self.text += p1
-        elif isinstance(p1, int):
-            if p1 == pygame.K_BACKSPACE:
+                self.text += arg
+        elif isinstance(arg, int):
+            if arg == pygame.K_BACKSPACE:
                 self.text = self.text[:-1]
-            elif p1 in (pygame.K_RETURN, pygame.K_KP_ENTER, pygame.K_TAB):
-                self._deactivate()
+            elif arg in (pygame.K_RETURN, pygame.K_KP_ENTER, pygame.K_TAB):
+                self.deactivate()
 
+    @override
     def hover_action(self) -> None:
         if self.bg_focus_color is None:
             return
@@ -96,16 +84,14 @@ class Input(Text, Hoverable):
         else:
             self.bg_color = self._bg_color_backup
 
+    @override
     def update(self, *args, **kwargs) -> None:
-        self.image = pygame.Surface((self.width, self.height))
+        self.image = pygame.Surface((self.width, self.height), flags=pygame.SRCALPHA)
         self._set_rect()
         self._align()
 
-        # Checks if there is a background color and if the input should have border radius
         if self.bg_color is not None:
             if self.border_radius is not None:
-                self.image.fill(self._fill_color)
-                self.image.set_colorkey(self._fill_color)
                 pygame.draw.rect(
                     self.image,
                     self.bg_color,

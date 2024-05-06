@@ -1,16 +1,92 @@
 """
 @author: Gabriel RQ
-@description: This file declares the bindings used in PyInterfacer.
+@description: This module declares the bindings used in PyInterfacer.
 """
 
 import typing
 
-from typing import Literal, Callable, Any, Tuple, Union, Optional
+from typing import Literal, Callable, Any, Tuple, Union, Optional, Dict
 from uuid import UUID, uuid4
 
 if typing.TYPE_CHECKING:
     from ..components import Component
-    from uuid import UUID
+
+
+class _BindingManager:
+    """Simple manager to handle bindings."""
+
+    def __init__(self) -> None:
+        self._bindings: Dict[UUID, _Binding] = {}
+
+    @property
+    def bindings(self) -> Dict[str, Dict[UUID, "_Binding"]]:
+        """Returns the bindings, grouped by type."""
+
+        b = {
+            "component": {},
+            "condition": {},
+            "key": {},
+        }
+
+        for k, v in self._bindings.items():
+            if isinstance(v, _ComponentBinding):
+                b["component"][k] = v
+            elif isinstance(v, _ConditionBinding):
+                b["condition"][k] = v
+            elif isinstance(v, _KeyBinding):
+                b["key"][k] = v
+
+        return b
+
+    def register(self, b: "_Binding") -> UUID:
+        """
+        Register a new binding to be handled.
+
+        :param b: Binding.
+        """
+
+        self._bindings[b.identifier] = b
+        return b.identifier
+
+    def unregister(self, id_: UUID) -> None:
+        """
+        Unregister the binding from the bindings mapping.
+
+        :param id_: ID of the binding to be unregistered.
+        """
+
+        if id_ in self._bindings:
+            del self._bindingsd[id_]
+
+    def clear(self) -> None:
+        """Clears the binding mapping."""
+
+        self._bindings.clear()
+
+    def handle(self, *args, **kwargs) -> None:
+        """Handles all bindings."""
+
+        for b in self._bindings.values():
+            id_ = b.handle(*args, **kwargs)
+
+            # Check if the binding should be unregistered
+            if id_ is not None:
+                self.unregister(id_)
+
+    def handle_single(self, id_: UUID, *args, **kwargs) -> None:
+        """
+        Handles a single binding.
+
+        :param id_: The id of the binding to handle.
+        """
+
+        b = self._bindings.get(id_)
+
+        if b is not None:
+            bid = b.handle(*args, **kwargs)
+
+            if bid is not None:
+                self.unregister(bid)
 
 
 class _Binding:
@@ -23,18 +99,8 @@ class _Binding:
     def identifier(self):
         return self._id
 
+    # Bindings should return their identifier in handle when they are to be unregistered after executed
     def handle(self, *args, **kwargs) -> Union[None, "UUID"]: ...
-
-    @staticmethod
-    def unregister(id_: "UUID", bindings: dict) -> None:
-        """
-        Unregister the binding from the bindings mapping.
-
-        :param id_: ID of the binding to be unregistered.
-        :param bindings: A mapping of bindings.
-        """
-
-        del bindings[id_]
 
 
 class _ComponentBinding(_Binding):
@@ -128,7 +194,7 @@ class _ConditionBinding(_Binding):
 
 
 class _KeyBinding(_Binding):
-    """Binds a pygame key event to a callback."""
+    """Binds a pygame key event to a callback. The identifier of a _KeyBindings is the event."""
 
     def __init__(
         self,
@@ -138,6 +204,7 @@ class _KeyBinding(_Binding):
     ) -> None:
         super().__init__()
 
+        self._id = event  # keybindings will use the pygame key event as their id, allowing for easier access
         self._event = event
         self._on_kup: Callable = on_kup
         self._on_kdown: Callable = on_kdown

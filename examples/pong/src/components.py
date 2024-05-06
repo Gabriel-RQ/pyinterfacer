@@ -2,8 +2,12 @@ import pygame
 import math
 import random
 
-from pyinterfacer import PyInterfacer, DefaultComponentTypes
-from pyinterfacer.components import TextButton, Component
+from pyinterfacer import interfacer as PyInterfacer
+from pyinterfacer.components.handled import (
+    _TextButton,
+    _Component,
+    DefaultComponentTypes,
+)
 from pyinterfacer.groups import ComponentGroup
 from .particle import ParticleManager
 from typing import Literal
@@ -16,10 +20,10 @@ pop_sound.set_volume(0.5)
 score_sound.set_volume(0.5)
 
 
-class MenuTitleButton(TextButton):
+class MenuTitleButton(_TextButton):
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self.subtype = DefaultComponentTypes.BUTTON.value
+        self.subtype = DefaultComponentTypes.BUTTON
 
     def hover_action(self) -> None:
         super().hover_action()
@@ -29,12 +33,12 @@ class MenuTitleButton(TextButton):
             return
 
         if self._hovered:
-            i.set_background("#c1c1c1")
+            i.background = "#c1c1c1"
         else:
-            i.set_background("#1c1c1c")
+            i.background = "#1c1c1c"
 
 
-class DottedLine(Component):
+class DottedLine(_Component):
     def __init__(
         self,
         color: str,
@@ -63,17 +67,14 @@ class DottedLine(Component):
                 width=self.thickness,
             )
 
-    def update(self) -> None:
-        return
 
-
-class Entity(Component):
+class Entity(_Component):
     def __init__(self, color: str, speed: int, **kwargs) -> None:
         super().__init__(**kwargs)
 
         self.color = color
         self.speed = speed
-        self.subtype = DefaultComponentTypes.COMPONENT.value
+        self.subtype = DefaultComponentTypes.COMPONENT
 
 
 class Paddle(Entity):
@@ -86,9 +87,8 @@ class Paddle(Entity):
 
     def reset_pos(self) -> None:
         i = PyInterfacer.get_interface(self.interface)
-        width, height = i.size
 
-        self.y = height // 2
+        self.y = i.height // 2
 
     def move(self, where: Literal["up", "down"]) -> None:
         self._moving[where] = True
@@ -97,7 +97,7 @@ class Paddle(Entity):
         self._moving["up"] = False
         self._moving["down"] = False
 
-    def update(self) -> None:
+    def update(self, dt, *args, **kwargs) -> None:
         self.image = pygame.Surface((self.width, self.height))
         self.rect = self.image.get_rect()
         self._align()
@@ -105,11 +105,11 @@ class Paddle(Entity):
         self.image.fill(self.color)
 
         if self._moving["up"]:
-            self.y -= self.speed * PyInterfacer.get_delta_time()
+            self.y -= self.speed * dt
         elif self._moving["down"]:
-            self.y += self.speed * PyInterfacer.get_delta_time()
+            self.y += self.speed * dt
 
-        _, height = PyInterfacer.get_interface(self.interface).size
+        height = PyInterfacer.get_interface(self.interface).height
         if (self.y + self.height) < 0:
             self.y = height
         elif (self.y - self.height) > height:
@@ -136,8 +136,8 @@ class Ball(Entity):
     def after_load(self, interface) -> None:
         self._interface_instance = interface
         self._paddle_group: PaddleGroup = interface.get_type_group("paddle")
-        self._p1: Paddle = PyInterfacer.get_by_id("player1")
-        self._p2: Paddle = PyInterfacer.get_by_id("player2")
+        self._p1: Paddle = PyInterfacer.get_component("player1")
+        self._p2: Paddle = PyInterfacer.get_component("player2")
 
         # adds the particles to be rendered
         interface.add_subgroup(self._particles.group)
@@ -162,14 +162,14 @@ class Ball(Entity):
         self.reset()
         self._p1.reset_pos()
         self._p2.reset_pos()
-        PyInterfacer.change_focus("score-pause")
+        PyInterfacer.go_to("score-pause")
 
-    def update(self) -> None:
+    def update(self, dt, *args, **kwargs) -> None:
         self._align()
 
         # Ball movement
-        self.x += self._vx * self._x_modifier * PyInterfacer.get_delta_time()
-        self.y += self._vy * self._y_modifier * PyInterfacer.get_delta_time()
+        self.x += self._vx * self._x_modifier * dt
+        self.y += self._vy * self._y_modifier * dt
 
         # Collision detection
         if self.y < 0 or self.y > self._interface_instance.height:
@@ -234,8 +234,8 @@ class PaddleGroup(ComponentGroup):
         return pygame.sprite.spritecollideany(ball, self)
 
     def handle_victory(self) -> None:
-        p1: Paddle = PyInterfacer.get_by_id("player1")
-        p2: Paddle = PyInterfacer.get_by_id("player2")
+        p1: Paddle = PyInterfacer.get_component("player1")
+        p2: Paddle = PyInterfacer.get_component("player2")
 
         if p1 is None or p2 is None:
             return
@@ -244,16 +244,16 @@ class PaddleGroup(ComponentGroup):
 
         if score_diff >= 2:
             if p1.score == 5:
-                PyInterfacer.get_by_id("winner-txt").text = "Player 1 wins!"
-                PyInterfacer.change_focus("victory")
+                PyInterfacer.get_component("winner-txt").text = "Player 1 wins!"
+                PyInterfacer.go_to("victory")
             elif p2.score == 5:
-                PyInterfacer.get_by_id("winner-txt").text = "Player 2 wins!"
-                PyInterfacer.change_focus("victory")
+                PyInterfacer.get_component("winner-txt").text = "Player 2 wins!"
+                PyInterfacer.go_to("victory")
         elif score_diff == 1:
             # If the diff is 1, the score should reset to 0 and the game should continue until the diff is 2, reseting to 0 every time it reaches 2 with a diff of 1. But that would be too much for this example, so i keep it simple: whoever reaches 6 first wins.
             if p1.score == 6:
-                PyInterfacer.get_by_id("winner-txt").text = "Player 1 wins!"
-                PyInterfacer.change_focus("victory")
+                PyInterfacer.get_component("winner-txt").text = "Player 1 wins!"
+                PyInterfacer.go_to("victory")
             elif p2.score == 6:
-                PyInterfacer.get_by_id("winner-txt").text = "Player 2 wins!"
-                PyInterfacer.change_focus("victory")
+                PyInterfacer.get_component("winner-txt").text = "Player 2 wins!"
+                PyInterfacer.go_to("victory")
