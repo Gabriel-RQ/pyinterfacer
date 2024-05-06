@@ -3,7 +3,7 @@ import os
 
 pygame.init()
 
-from pyinterfacer import PyInterfacer
+from pyinterfacer import interfacer as PyInterfacer
 from src.entities import Player, EnemySpawner
 
 
@@ -19,12 +19,12 @@ class Main:
             {"player": Player, "enemy-spawner": EnemySpawner}
         )
         PyInterfacer.load_all(os.path.abspath("interfaces/"))
-        PyInterfacer.change_focus("menu")
+        PyInterfacer.init()
+        PyInterfacer.go_to("menu")
 
-        self._player: Player = PyInterfacer.get_by_id("player")
+        self._player: Player = PyInterfacer.get_component("player")
 
         self._clock = pygame.time.Clock()
-        self._dt: float = 0
         self._FPS = 120
 
         self._running = True
@@ -34,12 +34,18 @@ class Main:
     def setup_components(self) -> None:
         PyInterfacer.map_actions(
             {
-                "menu-start-btn": lambda: PyInterfacer.change_focus("game"),
+                "menu-start-btn": lambda: PyInterfacer.go_to("game"),
                 "menu-exit-btn": self.stop,
-                "game-menu-btn": lambda: PyInterfacer.change_focus("menu"),
-                "menu-info-btn": lambda: PyInterfacer.change_focus("info"),
-                "info-menu-btn": lambda: PyInterfacer.change_focus("menu"),
-                "game-over-menu-btn": lambda: PyInterfacer.change_focus("menu"),
+                "game-menu-btn": lambda: PyInterfacer.go_to("menu"),
+                "menu-info-btn": lambda: PyInterfacer.go_to("info"),
+                "info-menu-btn": lambda: PyInterfacer.go_to("menu"),
+                "game-over-menu-btn": lambda: PyInterfacer.go_to("menu"),
+            }
+        )
+
+        PyInterfacer.bind_keys(
+            {
+                pygame.K_ESCAPE: {"press": lambda: PyInterfacer.go_to("menu")},
             }
         )
 
@@ -49,7 +55,7 @@ class Main:
         self._running = False
 
     def run(self) -> None:
-        enemy_spawner: EnemySpawner = PyInterfacer.get_by_id("enemy-spawner")
+        enemy_spawner: EnemySpawner = PyInterfacer.get_component("enemy-spawner")
 
         while self._running:
 
@@ -58,14 +64,10 @@ class Main:
                     self.stop()
                 elif event.type == pygame.KEYDOWN:
                     self._player.handle_movement(event, state="k_down")
-
-                    if event.key == pygame.K_ESCAPE:
-                        PyInterfacer.change_focus("menu")
                 elif event.type == pygame.KEYUP:
                     self._player.handle_movement(event, state="k_up")
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:
-                        PyInterfacer.emit_click()
+
+                PyInterfacer.handle_event(event)
 
             PyInterfacer.handle()
 
@@ -73,7 +75,7 @@ class Main:
             enemy_spawner.handle_player_hit(self._player)
 
             pygame.display.flip()
-            self._dt = self._clock.tick(self._FPS)
+            self._clock.tick(self._FPS)
 
 
 if __name__ == "__main__":

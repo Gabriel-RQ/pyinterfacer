@@ -2,8 +2,8 @@ import pygame
 import os
 
 from typing import Literal
-from pyinterfacer import PyInterfacer
-from pyinterfacer.components import SpritesheetAnimation
+from pyinterfacer import interfacer as PyInterfacer
+from pyinterfacer.components.handled import _SpritesheetAnimation
 from pyinterfacer.groups import ComponentGroup
 from .bullet import Bullet, BulletGroup
 
@@ -14,7 +14,7 @@ laser_shot_sound = pygame.mixer.Sound(
 laser_shot_sound.set_volume(0.1)
 
 
-class Player(SpritesheetAnimation):
+class Player(_SpritesheetAnimation):
     def __init__(
         self,
         speed: int,
@@ -31,6 +31,10 @@ class Player(SpritesheetAnimation):
         self._shoot_delay = 50
         self._shoot_delay_counter = 0
         self._bullet_group = BulletGroup()
+
+    def after_load(self, interface) -> None:
+        interface.add_subgroup(self._bullet_group)
+        self._inteface_width = interface.width
 
     def handle_enemy_hit(self, enemy_group: ComponentGroup) -> None:
         """
@@ -68,12 +72,12 @@ class Player(SpritesheetAnimation):
         self.hp -= 5
 
         if self.hp == 0:
-            PyInterfacer.get_by_id("player-score").text = f"Score: {self.score}"
-            PyInterfacer.change_focus("game-over")
+            PyInterfacer.get_component("player-score").text = f"Score: {self.score}"
+            PyInterfacer.go_to("game-over")
             self.hp = 100
             self.score = 0
 
-    def update(self) -> None:
+    def update(self, *args, **kwargs) -> None:
         super().update()
 
         # Movement handling
@@ -89,11 +93,8 @@ class Player(SpritesheetAnimation):
 
         self._shoot_delay_counter = (self._shoot_delay_counter + 1) % self._shoot_delay
 
-        PyInterfacer.INTERFACES[self.interface].add_subgroup(self._bullet_group)
-
         # Sides collision handling
-        iw, _ = PyInterfacer.INTERFACES[self.interface].size
         if self.rect.centerx < 0:
-            self.x = iw
-        elif self.rect.centerx > iw:
+            self.x = self._inteface_width
+        elif self.rect.centerx > self._inteface_width:
             self.x = 0

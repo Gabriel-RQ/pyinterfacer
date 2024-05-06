@@ -1,13 +1,13 @@
 import random
 import pygame
 
-from pyinterfacer import PyInterfacer
-from pyinterfacer.components import SpritesheetAnimation
+from pyinterfacer import interfacer as PyInterfacer
+from pyinterfacer.components.handled import _SpritesheetAnimation
 from .bullet import Bullet, BulletGroup
 from .player import Player
 
 
-class Enemy(SpritesheetAnimation):
+class Enemy(_SpritesheetAnimation):
     def __init__(self, **kwargs) -> None:
         super().__init__(
             id="_",
@@ -16,8 +16,7 @@ class Enemy(SpritesheetAnimation):
             sprite_width=16,
             sprite_height=16,
             colorkey="black",
-            width=128,
-            height=128,
+            size=(128, 128),
             delay=20,
             **kwargs,
         )
@@ -52,7 +51,7 @@ class Enemy(SpritesheetAnimation):
         return self._hp <= 0
 
     def _move(self) -> None:
-        iw, ih = PyInterfacer.get_focused().size
+        iw, ih = PyInterfacer.current_focus.size
 
         if self.rect.centerx < 0:
             self._x_vel_modifier = 1
@@ -71,8 +70,8 @@ class Enemy(SpritesheetAnimation):
         self.x += self._speed * self._x_vel_modifier
         self.y += self._speed * self._y_vel_modifier
 
-    def update(self) -> None:
-        super().update()
+    def update(self, *args, **kwargs) -> None:
+        super().update(*args, **kwargs)
 
         # Handle enemy movement
         self._move()
@@ -83,4 +82,4 @@ class Enemy(SpritesheetAnimation):
 
         self._shoot_delay_counter = (self._shoot_delay_counter + 1) % self._shoot_delay
 
-        PyInterfacer.INTERFACES[self.interface].add_subgroup(self._bullet_group)
+        PyInterfacer.get_interface(self.interface).add_subgroup(self._bullet_group)

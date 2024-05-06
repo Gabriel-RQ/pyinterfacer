@@ -1,14 +1,13 @@
 import random
-import pygame
 
-from pyinterfacer import PyInterfacer
-from pyinterfacer.components import Component
+from pyinterfacer import interfacer as PyInterfacer
+from pyinterfacer.components.handled import _Component
 from pyinterfacer.groups import ComponentGroup
 from .enemy import Enemy
 from .player import Player
 
 
-class EnemySpawner(Component):
+class EnemySpawner(_Component):
     def __init__(
         self,
         wave_size: int,
@@ -20,17 +19,19 @@ class EnemySpawner(Component):
         self.enemy_group = EnemyGroup()
 
     def _spawn_enemies(self) -> None:
-        iw, ih = PyInterfacer.get_focused().size
+        iw, ih = PyInterfacer.current_focus.size
 
         if len(self.enemy_group) == 0:
             for _ in range(self.wave_size):
                 self.enemy_group.add(
                     Enemy(
-                        x=random.randrange(0, iw),
-                        y=random.randrange(0, ih // 2),
+                        pos=(random.randrange(0, iw), random.randrange(0, ih // 2)),
                         interface=self.interface,
                     )
                 )
+
+    def after_load(self, interface) -> None:
+        interface.add_subgroup(self.enemy_group)
 
     def handle_player_hit(self, player) -> None:
         """
@@ -39,11 +40,10 @@ class EnemySpawner(Component):
 
         self.enemy_group.handle_player_hit(player)
 
-    def update(self) -> None:
+    def update(self, *args, **kwargs) -> None:
         super().update()
 
         self._spawn_enemies()
-        PyInterfacer.INTERFACES[self.interface].add_subgroup(self.enemy_group)
 
 
 class EnemyGroup(ComponentGroup):
