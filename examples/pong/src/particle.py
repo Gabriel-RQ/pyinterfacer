@@ -29,7 +29,7 @@ class Particle(pygame.sprite.Sprite):
 
         pygame.draw.circle(self.image, self.color, (self.r, self.r), self.r)
 
-    def update(self) -> None:
+    def update(self, *args, **kwargs) -> None:
         self.rect.center = (self.x, self.y)
 
         if self._x_modifier == 0:
@@ -78,7 +78,7 @@ class TextParticle(pygame.sprite.Sprite):
 
         self._scale_modifier = random.uniform(0.75, 1.25)
 
-    def update(self) -> None:
+    def update(self, *args, **kwargs) -> None:
         self.image, _ = self.font.render(self.text)
         self.image = pygame.transform.smoothscale_by(self.image, self._scale_modifier)
         self.rect = self.image.get_rect(center=(self.x, self.y))
@@ -92,7 +92,7 @@ class TextParticle(pygame.sprite.Sprite):
 
 
 class ParticleGroup(pygame.sprite.Group):
-    def update(self) -> None:
+    def update(self, *args, **kwargs) -> None:
         for sprite in self.sprites():
             if isinstance(sprite, Particle):
                 if sprite._vx == 0 and sprite._vy == 0:

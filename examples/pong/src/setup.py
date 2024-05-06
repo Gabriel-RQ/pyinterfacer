@@ -1,7 +1,7 @@
 import os
 import pygame
 
-from pyinterfacer import PyInterfacer
+from pyinterfacer import interfacer as PyInterfacer
 from typing import Callable
 from .components import *
 
@@ -15,14 +15,15 @@ def setup_interfaces(
     PyInterfacer.map_actions(
         {
             "exit-btn": exit_action,
-            "play-btn": lambda: PyInterfacer.change_focus("game"),
+            "play-btn": lambda: PyInterfacer.go_to("game"),
             "leave-btn": finish_game,
             "fullscreen-btn": full_screen,
         }
     )
 
     PyInterfacer.load_all(os.path.abspath("interfaces/"))
-    PyInterfacer.change_focus("menu")
+    PyInterfacer.init()
+    PyInterfacer.go_to("menu")
 
     setup_bindings(finish_game, full_screen)
 
@@ -45,8 +46,8 @@ def setup_custom_components() -> None:
 
 def setup_bindings(finish_game, full_screen) -> None:
     # Setup keybindings
-    player1: Paddle = PyInterfacer.get_by_id("player1")
-    player2: Paddle = PyInterfacer.get_by_id("player2")
+    player1: Paddle = PyInterfacer.get_component("player1")
+    player2: Paddle = PyInterfacer.get_component("player2")
 
     PyInterfacer.bind_keys(
         {
@@ -72,8 +73,8 @@ def setup_bindings(finish_game, full_screen) -> None:
 
 
 def unpause_after_score():
-    if (f := PyInterfacer.get_focused()) is not None and f.name not in (
+    if (f := PyInterfacer.current_focus) is not None and f.name not in (
         "menu",
         "victory",
     ):
-        PyInterfacer.change_focus("game")
+        PyInterfacer.go_to("game")

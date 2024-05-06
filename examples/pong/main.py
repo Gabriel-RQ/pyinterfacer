@@ -2,7 +2,7 @@ import pygame
 
 pygame.init()
 
-from pyinterfacer import PyInterfacer
+from pyinterfacer import interfacer as PyInterfacer
 from src.setup import setup_interfaces, setup_bindings
 
 
@@ -66,7 +66,7 @@ class Main:
                 elif event.type == pygame.JOYDEVICEREMOVED:
                     self._controller = None
                 elif event.type == pygame.JOYAXISMOTION:
-                    p1 = PyInterfacer.get_by_id("player1")
+                    p1 = PyInterfacer.get_component("player1")
                     if event.axis == 1:
                         if event.value < -0.5:
                             p1.move("up")
@@ -80,12 +80,11 @@ class Main:
 
                 PyInterfacer.handle_event(event)
 
-            PyInterfacer.handle()
+            PyInterfacer.handle(dt=self._dt)
             paddle_group.handle_victory()
 
             pygame.display.flip()
             self._dt = self._clock.tick(self._FPS) / 1000
-            PyInterfacer.set_delta_time(self._dt)
 
 
 if __name__ == "__main__":
