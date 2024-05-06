@@ -17,7 +17,8 @@ import typing
 import yaml
 
 from .interface import Interface, _ConversionMapping
-from .components.handled import _HandledClickable, _HandledGetInput
+from .components.handled import _HandledGetInput
+from .components.standalone._clickable import _Clickable
 from .managers import _OverlayManager, _BackupManager, _BindingManager, _KeyBinding
 from .util import Singleton
 from typing import Optional, Dict, Callable, Union, Literal, overload
@@ -133,7 +134,7 @@ class PyInterfacer(metaclass=Singleton):
         Initializes the interfaces in the loading queue.
         """
 
-        for i, interface in enumerate(self.__interface_queue):
+        for interface in self.__interface_queue:
             with open(interface, "r") as interface_file:
                 interface_dict: Dict = yaml.safe_load(interface_file)
 
@@ -147,7 +148,8 @@ class PyInterfacer(metaclass=Singleton):
                     raise _InvalidInterfaceFileException()
 
                 self._parse_interface(interface_dict)
-                self.__interface_queue.pop(i)
+
+        self.__interface_queue.clear()
 
     # Update and render
 
@@ -409,8 +411,8 @@ class PyInterfacer(metaclass=Singleton):
         for id_ in self._component_action_mapping.keys():
             c = self._components.get(id_)
 
-            if isinstance(c, _HandledClickable):
-                c.action = self._components[id_]
+            if isinstance(c, _Clickable):
+                c.action = self._component_action_mapping[id_]
 
     # Magic operators
 

@@ -162,7 +162,7 @@ class Interface:
 
         for group in self._component_type_groups:
             if isinstance((g := self._component_type_groups[group]), InputGroup):
-                g.handle_input(event, (self.name,))
+                g.handle_input(event, interfaces=(self.name,))
 
     def handle_hover(self) -> None:
         """
@@ -171,7 +171,7 @@ class Interface:
 
         for group in self._component_type_groups:
             if isinstance((g := self._component_type_groups[group]), HoverableGroup):
-                g.handle_hover((self.name,))
+                g.handle_hover(interfaces=(self.name,))
 
     # Bindings
 
