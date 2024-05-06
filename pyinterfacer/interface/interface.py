@@ -93,6 +93,17 @@ class Interface:
 
         return {c.id: c for c in self._components if c.id != "_"}
 
+    @property
+    def background(self) -> str | pygame.Surface:
+        if self._bg_image is not None:
+            return self._bg_image
+
+        return self._bg_color
+
+    @background.setter
+    def background(self, bg: str) -> None:
+        self._parse_background(bg)
+
     # Update and Render
 
     def update(self, dt: float) -> None:
@@ -274,6 +285,15 @@ class Interface:
 
         if group not in self._subgroups:
             self._subgroups.append(group)
+
+    def get_type_group(self, type_: str) -> Optional[ComponentGroup]:
+        """
+        Returns a specific component type group if it exists, otherwise None.
+
+        :param type_: Component type.
+        """
+
+        return self._component_type_groups.get(type_)
 
     # Internal methods
 

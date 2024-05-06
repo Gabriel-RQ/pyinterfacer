@@ -16,6 +16,7 @@ if typing.TYPE_CHECKING:
 
 
 # TODO: Implement condition bindings raw reloading.
+# TODO:
 
 
 class _BackupManager:
@@ -97,10 +98,13 @@ class _BackupManager:
         :param pyinterfacer: PyInterfacer's object instance.
         """
 
+        pyinterfacer._component_action_mapping = self.actions.copy()
+
         if raw:
             for interface_file in self._interface_files:
                 with open(interface_file, "r") as f:
                     pyinterfacer._parse_interface(yaml.safe_load(f))
+            pyinterfacer._update_actions()
 
             # Recover the bindings for each component from the backup
             for binding in self._interface_bindings["component"]:
@@ -110,7 +114,6 @@ class _BackupManager:
             pyinterfacer._components = self.components.copy()
 
         pyinterfacer._current_focus = pyinterfacer._interfaces.get(self.focus)
-        pyinterfacer._component_action_mapping = self.actions.copy()
         pyinterfacer._bindings = self.keybindings
         pyinterfacer._update_actions()
         pyinterfacer.overlay.restore()
