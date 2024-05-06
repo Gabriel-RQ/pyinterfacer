@@ -18,6 +18,7 @@ class Paragraph(Text):
         line_height: Optional[int] = None,
         **kwargs,
     ) -> None:
+        super().__init__(**kwargs)
         self.lines = lines
         self.line_height = (
             line_height if line_height is not None else self.font.size * 0.75

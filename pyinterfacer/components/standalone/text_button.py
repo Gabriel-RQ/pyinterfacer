@@ -10,7 +10,8 @@ from typing import Optional, override
 
 
 class TextButton(_Clickable, Text, _Hoverable):
-    def __init__(self, focus_color: Optional[str] = None) -> None:
+    def __init__(self, focus_color: Optional[str] = None, **kwargs) -> None:
+        super().__init__(**kwargs)
         self.focus_color = focus_color
 
     @override
