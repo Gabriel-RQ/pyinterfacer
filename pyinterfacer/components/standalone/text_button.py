@@ -13,6 +13,7 @@ class TextButton(_Clickable, Text, _Hoverable):
     def __init__(self, focus_color: Optional[str] = None, **kwargs) -> None:
         super().__init__(**kwargs)
         self.focus_color = focus_color
+        self._color_backup = self.font.color
 
     @override
     def hover_action(self) -> None:
@@ -22,4 +23,4 @@ class TextButton(_Clickable, Text, _Hoverable):
         if self._hovered:
             self.font.color = self.focus_color
         else:
-            self.font.color = self.font.color_backup
+            self.font.color = self._color_backup

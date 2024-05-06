@@ -24,7 +24,9 @@ class ComponentGroup(pygame.sprite.Group):
     """Base container for Component objects."""
 
     @override
-    def update(self, interfaces: Optional[Tuple[str, ...]] = None) -> None:
+    def update(
+        self, interfaces: Optional[Tuple[str, ...]] = None, *args, **kwargs
+    ) -> None:
         """
         Same as `pygame.sprite.Group.update`, extended with interface filtering.
 
@@ -39,7 +41,7 @@ class ComponentGroup(pygame.sprite.Group):
             sprites = self.sprites()
 
         for sprite in sprites:
-            sprite.update()
+            sprite.update(*args, **kwargs)
 
     @override
     def draw(

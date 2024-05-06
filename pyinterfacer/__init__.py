@@ -3,3 +3,5 @@ PyInterfacer: A modular library designed to easily handle interfaces and compone
 """
 
 from .pyinterfacer import PyInterfacer
+
+interfacer = PyInterfacer()
