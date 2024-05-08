@@ -1,13 +1,6 @@
 """
-TODO: Create the new version of PyInterfacer, using the Singleton pattern.
-
-PyInterfacer will be responsible of:
- - Parsing and loading the interfaces
- - Managing the backups
- - Storing metadata
- - Handling KeyBindings
- - Handling global overlays
- - Handling the current interface
+@author: Gabriel RQ
+@description: Main module for the PyInterfacer library. This module contains the PyInterfacer class, which is responsible for managing the interfaces, components and bindings. The class is a Singleton.
 """
 
 import pygame
@@ -29,6 +22,8 @@ if typing.TYPE_CHECKING:
 
 
 class PyInterfacer(metaclass=Singleton):
+    """Main PyInterfacer class."""
+
     def __init__(self) -> None:
 
         # Stores the file paths for the interfaces queued to be loaded
