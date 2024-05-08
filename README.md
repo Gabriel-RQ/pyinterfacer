@@ -1,6 +1,6 @@
 # PyInterfacer
 
-A modular library for handling interfaces in pygame projects.
+A modular library for handling interfaces and components in pygame projects.
 
 Build menus and interfaces for pygame projects using simple YAML descriptions and a base set of components.
 Are the base components not enough? Expand on them and create your own!
@@ -58,29 +58,29 @@ Knowing that just having some buttons and texts all over your display is not eno
 
 The rules are quite simple:
 
-- Every component must inherit from the base `Component` class.
+- Every component must inherit from the base `_Component` class.
 - Every custom component should set it's `subtype` attribute value to one of the types of the default components.
 
 Here's an example of a custom component:
 
 ```py
-from pyinterfacer.components import Text
+from pyinterfacer.components.handled import _Text, DefaultComponentTypes
 
-class HelloWorld(Text):
+class HelloWorld(_Text):
     """A component that only displays Hello world."""
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.text = "Hello, world"
-        self.subtype = "text"
+        self.subtype = DefaultComponentTypes.TEXT
 ```
 
-In this example, our incredible `HelloWorld` component inherits from `Component` through `Text`, and specializes in displaying 'Hello, world'. By doing simply that, your custom component has access to all `Text`'s attributes, plus any it defines in it's constructor.<br>
+In this example, our incredible `HelloWorld` component inherits from `_Component` through `_Text`, and specializes in displaying 'Hello, world'. By doing simply that, your custom component has access to all `Text`'s attributes, plus any it defines in it's constructor.<br>
 
 To use this component in our project, we load it into PyInterfacer, before loading any interface file that might use it:
 
 ```py
 from custom_components import HelloWorld
-from pyinterfacer import PyInterfacer
+from pyinterfacer import interfacer as PyInterfacer
 
 PyInterfacer.add_custom_components({ "hello": HelloWorld })
 ```
@@ -99,6 +99,14 @@ components:
     font_size: 64
     font_color: red
 ```
+
+## Standalone components and Handled components
+
+When importing from `pyinterfacer.components` you'll get two submodules: handled and standalone. The Standalone module defines every component avaiable by default in PyInterfacer, but without library specific attributes, meaning you can use them without PyInterfacer. Every component in the Handled submodule inherits from it's counterpart in the Standalone submodule, but also inherits from the `_HandledComponent` class, which defines attributes needed by the library to internally handle the components.
+
+You dont need to worry much about this: If creating custom components to work with the library, inherit from the components in the `handled` submodule and you'll be fine. If you just need to quickly programatically create a component that don't rely in the library for anything, just use the components in the `standalone` submodule.
+
+A minor caveat is that when creating a custom component to work with the library that does not fit into any of the default components types, you should use the `_Component` class, which is exported in the `pyinterfacer.components.handled` submodule. The `_HandledComponent` class is not actually a valid component class and only defines the library required attributes, hence why it is not exported by default in the module, to avoid confusion.
 
 ## Component groups
 
@@ -120,7 +128,7 @@ This group can then be loaded into PyInterfacer:
 ```py
 from custom_components import HelloWorld
 from custom_groups import HelloWorldGroup
-from pyinterfacer import PyInterfacer
+from pyinterfacer import interfacer as PyInterfacer
 
 PyInterfacer.add_custom_components({ "hello": HelloWorld })
 PyInterfacer.add_custom_groups({ "hello": HelloWorldGroup })
@@ -129,8 +137,7 @@ PyInterfacer.add_custom_groups({ "hello": HelloWorldGroup })
 This means you can use any custom methods from our custom group, as the groups are stored per component type:
 
 ```py
-interface = PyInterfacer.get_interface("example-interface")
-hello_group = interface.get_type_group("hello")
+hello_group = PyInterfacer["example-interface"].get_type_group("hello")
 while running:
     <pygame events>
 
@@ -237,25 +244,25 @@ Each component can define a single style class, or a list of style classes. If a
 May you need to render anything other than components at the display, PyInterfacer allows to do so through overlays. PyInterfacer has a global overlay, allowing you to render anything above every interface. All you need to do is to add render targets to the overlay:
 
 ```py
-PyInterfacer.add_to_overlay(surface, destination) # to add a single Surface
-PyInterfacer.add_to_overlay(((surface, destination), ...)) # to add multiple Surfaces
+PyInterfacer().overlay.add_single_target(surface, destination) # to add a single Surface
+PyInterfacer().overlay.add_many_targets(((surface, destination), ...)) # to add multiple Surfaces
 ```
 
 You can also clear the overlay, restore the last overlay render targets, and set the overlay opacity, if needed:
 
 ```py
-PyInterfacer.clear_overlay()
-PyInterfacer.restore_overlay()
-PyInterfacer.set_overlay_opacity(integer-from-1-to-255)
+PyInterfacer().overlay.clear()
+PyInterfacer().overlay.restore()
+PyInterfacer().overlay.opacity = <integer-from-1-to-255>
 ```
 
 If you want a better control over what is rendered into each interface, you can also add render targets to overlays in each interface:
 
 ```py
-i = PyInterfacer.get_interface("interface-name")
+i = PyInterfacer().get_interface("interface-name")
 if i is not None:
-  i.add_to_layer(surface, destionation, layer=RenderLayer.OVERLAY)
-  i.add_to_layer(((surface, destination), ...), layer=RenderLayer.OVERLAY)
+  i.overlay.add_single_target(surface, destionation)
+  i.overlay.add_many_targets(((surface, destination), ...))
 ```
 
 The methods to clear, restore and set opacity to the overlay also apply for interface overlays.
@@ -265,10 +272,10 @@ The methods to clear, restore and set opacity to the overlay also apply for inte
 Some times you many need to render something under the components, and above the background, like a game map, for example. For that, you can set render targets for the underlayer of each interface. Underlayers work exactly the same as overlays:
 
 ```py
-i = PyInterfacer.get_interface("interface-name")
+i = PyInterfacer().get_interface("interface-name")
 if i is not None:
-  i.add_to_layer(surface, destionation, layer=RenderLayer.UNDERLAYER)
-  i.add_to_layer(((surface, destination), ...), layer=RenderLayer.UNDERLAYER)
+  i.underlayer.add_single_target(surface, destionation)
+  i.underlayer.add_many_targets(((surface, destination), ...))
 ```
 
 # Components and attributes
@@ -287,6 +294,27 @@ Component:
   grid_cell: int?
   style: str?
   alignment: "center" | "topleft" | "topright" | "midleft" | "midright" | "bottomleft" | "bottomright" # defaults to 'center', controls where (x, y) will be on the component's rect
+
+StaticText:
+  id: str
+  type: str
+  interface: str
+  x: int
+  y: int
+  width: int?
+  height: int?
+  grid_cell: int?
+  style: str?
+  text: str
+  font: str?
+  font_size: int?
+  font_color: str?
+  font_bg_color: str?
+  bold: bool?
+  italic: bool?
+  rotation: int?
+  antialias: bool?
+  alignment: "center" | "topleft" | "topright" | "midleft" | "midright" | "bottomleft" | "bottomright"
 
 Text:
   id: str
@@ -330,6 +358,7 @@ Paragraph:
   antialias: bool?
   lines: List[str] # each string on the list will be rendered in a line
   line_height: int?
+  alignment: "center" | "topleft" | "topright" | "midleft" | "midright" | "bottomleft" | "bottomright"
 
 Clickable:
   id: str
@@ -401,6 +430,19 @@ TextButton:
   action: Callable? # this should not be set at the YAML declaration
   enabled: bool?
   focus_color: str?
+  alignment: "center" | "topleft" | "topright" | "midleft" | "midright" | "bottomleft" | "bottomright"
+
+GetInput:
+  id: str
+  type: str
+  interface: str
+  x: int
+  y: int
+  width: int?
+  height: int?
+  grid_cell: int?
+  style: str?
+  active: bool
   alignment: "center" | "topleft" | "topright" | "midleft" | "midright" | "bottomleft" | "bottomright"
 
 Input:
@@ -488,11 +530,12 @@ Here's our example in code:
 ```py
 <import modules, set display and loads interfaces>
 
-PyInterfacer.load("interface.yaml")
+PyInterfacer().load("interface.yaml")
+PyInterfacer().init()
 
 # Consider 'interface.yaml' to have components with id 'player' and 'player-hp-txt'
 # We them bind the 'player' component 'hp' attribute value to the 'player-hp-txt' component 'text' attribute value. Now any changes on the player 'hp' value will be updated in the player hp text as well.
-PyInterfacer.bind("player", "hp", "player-hp-txt", "text")
+PyInterfacer().bind("player", "hp", "player-hp-txt", "text")
 
 <handle game loop>
 ```
@@ -507,7 +550,7 @@ You can also bind a component's attribute value to a callback, instead of anothe
 def bind_fps(v):
   return f"FPS: {int(clock.get_fps())}
 
-PyInterfacer.bind("fps-txt", "text", bind_fps)
+PyInterfacer().bind("fps-txt", "text", bind_fps)
 
 <handle game loop>
 ```
@@ -524,18 +567,18 @@ The example below changes the display background color every 5 seconds:
 dt = 0
 counter = 0
 
-PyInterfacer.bind("counter-txt", "text", lambda _: str(round(counter)))
-i = PyInterfacer.get_focused()
+PyInterfacer().bind("counter-txt", "text", lambda _: str(round(counter)))
 
 colors = ["#e6658c", "#d077ed", "#7779ed", "#77dbed", "#93ed77", "#eddf77", "#ed8377"]
 last_time_change = -1
 
 def change_bg():
     global last_time_change
-    i.set_background(random.choice(colors))
+    PyInterfacer().current_focus.background = random.choice(colors)
     last_time_change = int(counter)
 
-PyInterfacer.when(
+# The binding establishes that every 5 seconds the background color will be changed. The keep parameter specifies if the binding will be unregistered after the first time it runs, or if it will be updated indefinitely
+PyInterfacer().current_focus.when(
     lambda: int(counter) % 5 == 0 and int(counter) != last_time_change,
     change_bg,
     keep=True,
@@ -549,7 +592,10 @@ PyInterfacer.when(
 PyInterfacer also allows a certain key press to be binded to a callback. Look below:
 
 ```py
-PyInterfacer.bind_keys({
+
+player = PyInterfacer().get_component("player")
+
+PyInterfacer().bind_keys({
   pygame.K_ESCAPE: {"press": lambda: PyInterfacer.change_focus("menu")}
   pygame.K_w: {"press": lambda: player.move("up"), "release": player.stop}
   pygame.K_s: {"press": lambda: player.move("down"), "release": player.stop}
@@ -564,7 +610,8 @@ Below, an example project:
 
 ```py
 import pygame
-from pyinterfacer import PyInterfacer
+# PyInterfacer is a Singleton. An instance is already export alongside the main class, for the sake of convenience
+from pyinterfacer import interfacer as PyInterfacer
 
 pygame.init()
 
@@ -573,11 +620,14 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 clock = pygame.time.Clock()
 FPS = 120
 
-# set display for rendering (defaults to the display initialized by pygame.screen.set_mode if not set)
-PyInterfacer.set_display(screen)
+# set display for rendering (this is optional, and defaults to the display initialized by pygame.screen.set_mode if not set)
+PyInterfacer.display = screen
 
+# This adds the specified interface file to the loading queue
 PyInterfacer.load("example-interface.yaml")
-PyInterfacer.change_focus("example-interface")
+# And then the loading queue is parsed and initialized
+PyInterfacer.init()
+PyInterfacer.go_to("example-interface")
 
 running = True
 while running:
@@ -586,18 +636,17 @@ while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
+
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
-                # handles clicks on Clickable components
-                PyInterfacer.emit_click()
+                # handles clicks on _HandledClickable components
+                PyInterfacer.current_focus.emit_click(event.pos)
         elif event.type == pygame.KEYDOWN:
-            # handles input to any Input component
-            PyInterfacer.emit_input(event)
+            # handles input to any component that inherits from _HandledGetInput
+            PyInterfacer.current_focus.emit_input(event)
 
-    # update should come before draw, as most components set their image and rect at the update method
-    PyInterfacer.update()
-    PyInterfacer.draw()
-    PyInterfacer.handle_hover()
+    # This will call update, draw and handle_hover on the focused interface, and update the overlays. Delta time is accepted as a parameter (defaults to 1)
+    PyInterfacer.handle()
 
     pygame.display.flip()
     clock.tick(FPS)
@@ -607,7 +656,7 @@ An example with button interactions:
 
 ```py
 import pygame
-from pyinterfacer import PyInterfacer
+from pyinterfacer import interfacer as PyInterfacer
 
 pygame.init()
 
@@ -617,22 +666,16 @@ clock = pygame.time.Clock()
 FPS = 120
 
 PyInterfacer.load_all("interfaces/")
+PyInterfacer.init()
 
-# gets a reference to the button components
-gotomenu_btn = PyInterfacer.get_by_id("gotomenu_btn")
-gotomain_btn = PyInterfacer.get_by_id("gotomain_btn")
-exit_btn = PyInterfacer.get_by_id("exit_btn")
-
-# verifies if they are loaded and set their action
-if gotomenu_btn:
-  gotomenu_btn.action = lambda: PyInterfacer.change_focus("menu-interface")
-if gotomain_btn:
-  gotomain_btn.action = lambda: PyInterfacer.change_focus("main-interface")
-if exit_btn:
-  exit_btn.action = exit
+PyInterfacer.map_actions({
+  "gotomenu_btn": lambda: PyInterfacer.change_focus("menu-interface"),
+  "gotomain_btn": lambda: PyInterfacer.change_focus("main-interface"),
+  "exit_btn": exit
+})
 
 # set the current focus
-PyInterfacer.change_focus("main-interface")
+PyInterfacer.go_to("main-interface")
 
 running = True
 while running:
@@ -641,12 +684,9 @@ while running:
   for event in pygame.event.get():
     if event.type == pygame.QUIT:
       running = False
-    elif event.type == pygame.MOUSEBUTTONDOWN:
-      if event.button == 1:
-        # emit a click event in the currently focused interface
-        PyInterfacer.emit_click(PyInterfacer.get_focused())
 
-  # updates, renders and handles hover in the currently focused interface
+    PyInterfacer.handle_event(event)
+
   PyInterfacer.handle()
 
   pygame.display.flip()
