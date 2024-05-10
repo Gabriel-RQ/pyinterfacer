@@ -596,7 +596,7 @@ PyInterfacer also allows a certain key press to be binded to a callback. Look be
 player = PyInterfacer().get_component("player")
 
 PyInterfacer().bind_keys({
-  pygame.K_ESCAPE: {"press": lambda: PyInterfacer.change_focus("menu")}
+  pygame.K_ESCAPE: {"press": lambda: PyInterfacer.go_to("menu")}
   pygame.K_w: {"press": lambda: player.move("up"), "release": player.stop}
   pygame.K_s: {"press": lambda: player.move("down"), "release": player.stop}
 })
@@ -669,8 +669,8 @@ PyInterfacer.load_all("interfaces/")
 PyInterfacer.init()
 
 PyInterfacer.map_actions({
-  "gotomenu_btn": lambda: PyInterfacer.change_focus("menu-interface"),
-  "gotomain_btn": lambda: PyInterfacer.change_focus("main-interface"),
+  "gotomenu_btn": lambda: PyInterfacer.go_to("menu-interface"),
+  "gotomain_btn": lambda: PyInterfacer.go_to("main-interface"),
   "exit_btn": exit
 })
 
