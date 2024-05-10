@@ -150,6 +150,35 @@ class PyInterfacer(metaclass=Singleton):
 
         self.__interface_queue.clear()
 
+    @overload
+    def inject(self, component: Dict, interface: str) -> None:
+        """
+        Allows to programatically inject a component into an existing interface.
+
+        :param component: Dictionary containing component data.
+        :param interface: Name of the interface to inject the component into.
+        """
+
+        ...
+
+    @overload
+    def inject(self, interface: Dict) -> None:
+        """
+        Allows to programatically inject an interface dictionary into PyInterfacer.
+
+        :param interface: Dictionary containing interface data.
+        """
+
+        ...
+
+    def inject(self, d: Dict, i: Optional[str] = None) -> None:
+        if i is None:
+            self._parse_interface(d)
+        else:
+            interface = self._interfaces.get(i)
+            if interface is not None:
+                interface._parse_components([d])
+
     # Update and render
 
     def handle(self, dt: float = 1) -> None:
