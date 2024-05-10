@@ -3,7 +3,6 @@
 @description: Backup manager class. Serves the purpouse of keeping a backup of the data needed to restore PyInterfacer after unloading it.
 """
 
-import os
 import yaml
 import typing
 from typing import Optional, List, Dict, Tuple, Callable
@@ -15,14 +14,8 @@ if typing.TYPE_CHECKING:
     from ._binding import _BindingManager
 
 
-# TODO: Implement condition bindings raw reloading.
-# TODO:
-
-
 class _BackupManager:
-    """
-    Manager to handle PyInterfacer backups.
-    """
+    """Manager to handle PyInterfacer backups."""
 
     def __init__(self) -> None:
         self.focus: Optional[str] = None
@@ -31,10 +24,7 @@ class _BackupManager:
         self.actions = {}
         self.keybindings: Optional["_BindingManager"] = None
         # Remembers the bindings for each interface, to recreate them when raw reloading.
-        # As the bindings are created for components, and the components store their interface, they can be stored all together.
-        self._interface_bindings: Dict[
-            str, List[Tuple[str, str, Callable | str, Optional[str]]]
-        ] = {
+        self._interface_bindings: Dict[str, List[Tuple]] = {
             "condition": [],
             "component": [],
         }
@@ -109,6 +99,10 @@ class _BackupManager:
             # Recover the bindings for each component from the backup
             for binding in self._interface_bindings["component"]:
                 pyinterfacer.bind(*binding)
+            for binding in self._interface_bindings["condition"]:
+                pyinterfacer._interfaces[binding[0]].when(
+                    *binding[1:3], keep=binding[3]
+                )
         else:
             pyinterfacer._interfaces = self.interfaces.copy()
             pyinterfacer._components = self.components.copy()
@@ -144,6 +138,8 @@ class _BackupManager:
         # Creates a backup of the data needed to recreate the bindings for each interface.
         for interface in self.interfaces:
             bindings = self.interfaces[interface]._bindings.bindings
+
+            # backup component bindings
             self._interface_bindings["component"].extend(
                 [
                     (
@@ -157,6 +153,14 @@ class _BackupManager:
                         b._to_attr,
                     )
                     for b in bindings["component"].values()
+                ]
+            )
+
+            # backup condition bindings
+            self._interface_bindings["condition"].extend(
+                [
+                    (interface, b._condition, b._callback, b._keep)
+                    for b in bindings["condition"].values()
                 ]
             )
 
