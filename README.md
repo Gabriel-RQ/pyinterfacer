@@ -694,3 +694,14 @@ while running:
 
 pygame.quit()
 ```
+
+# Using/Building the library
+
+PyInterfacer can be used as a submodule in your own project, to do that just copy the [pyinterfacer/](./pyinterfacer/) folder into your project structure, and install the [requirements](./requirements.txt) and your good to go.
+
+If you want to use PyInterfacer as a package, you can build it following the steps below:
+
+- Clone the repository with `git clone https://github.com/Gabriel-RQ/pyinterfacer`
+- Navigate to the project root
+- Install the dev requirements with `pip install -r requirements-dev.txt`
+- Build PyInterfacer by executing [build.sh](./build.sh) (or `python setup.py bdist_wheel`)
