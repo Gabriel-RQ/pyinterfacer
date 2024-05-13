@@ -34,12 +34,14 @@ class Interface:
         display: Literal["default", "grid", "overlay"],
         rows: Optional[int] = None,
         columns: Optional[int] = None,
+        parent: Optional[str] = None,
         styles: Optional[Dict[str, Dict]] = None,
     ) -> None:
         self.name = name
         self.display = display  # display type
         self.rows = rows
         self.columns = columns
+        self.parent = parent  # parent interface, if overlayed
         self.size = size
 
         self._overlay = _OverlayManager(self.size)
@@ -119,6 +121,7 @@ class Interface:
                 g.update(dt=dt)
 
         self._bindings.handle()
+        self._overlay.update_interfaces(dt=dt)
 
     def draw(self, surface: pygame.Surface) -> None:
         """
@@ -131,7 +134,8 @@ class Interface:
         if self._bg_image is not None:
             surface.blit(self._bg_image, (0, 0))
         else:
-            surface.fill(self._bg_color)
+            if self.display != "overlay":
+                surface.fill(self._bg_color)
 
         # Renders the underlayer
         self._underlayer.render(surface)

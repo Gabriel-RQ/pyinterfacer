@@ -14,7 +14,7 @@ from .components.handled import _HandledGetInput
 from .components.standalone._clickable import _Clickable
 from .managers import _OverlayManager, _BackupManager, _BindingManager, _KeyBinding
 from .util import Singleton
-from typing import Optional, Dict, Callable, Union, Literal, overload
+from typing import Optional, Dict, Callable, Union, Literal, List, overload
 
 if typing.TYPE_CHECKING:
     from .components.handled import _Component
@@ -27,7 +27,9 @@ class PyInterfacer(metaclass=Singleton):
     def __init__(self) -> None:
 
         # Stores the file paths for the interfaces queued to be loaded
-        self.__interface_queue = []
+        self.__interface_queue: List[str] = []
+        # Stores interfaces with display type 'overlay' and a 'parent' attribute, to be processed after instantiated
+        self.__local_overlayed_interfaces: List[Interface] = []
 
         # Stores all the interfaces. Each key represents an interface name.
         self._interfaces: Dict[str, Interface] = {}
@@ -149,6 +151,14 @@ class PyInterfacer(metaclass=Singleton):
                 self._parse_interface(interface_dict)
 
         self.__interface_queue.clear()
+
+        # Handles interfaces that are local overlays
+        for interface in self.__local_overlayed_interfaces:
+            parent = self._interfaces.get(interface.parent)
+            if parent is not None:
+                parent.overlay.add_interface_target(interface)
+
+        self.__local_overlayed_interfaces.clear()
 
     @overload
     def inject(self, component: Dict, interface: str) -> None:
@@ -414,6 +424,7 @@ class PyInterfacer(metaclass=Singleton):
             display=interface_dict.get("display"),
             rows=interface_dict.get("rows"),
             columns=interface_dict.get("columns"),
+            parent=interface_dict.get("parent"),
             styles=s,
         )
         self._interfaces[i.name] = i
@@ -426,7 +437,12 @@ class PyInterfacer(metaclass=Singleton):
         self._update_actions()
 
         if i.display == "overlay":
-            self._overlay.add_interface_target(i)
+            # An interface with 'overlay' display and a 'paren't attribute is refered to as a 'local overlay'
+            if "parent" in interface_dict:
+                self.__local_overlayed_interfaces.append(i)
+            else:
+                # the opposite, an interface with display 'overlay', but  without the 'parent' attribute is a 'global overlay'
+                self._overlay.add_interface_target(i)
 
     def _update_actions(self) -> None:
         """
@@ -470,6 +486,11 @@ class _InvalidDisplayTypeException(Exception):
         super().__init__(
             f"The specified display type for the interface '{interface}' is invalid. It should be one of 'default', 'grid' or 'overlay'. Note that grid displays shoud provide 'rows' and 'columns'."
         )
+
+
+class _InvalidGenericAttributeException(Exception):
+    def __init__(self, attr: str, message: str = "") -> None:
+        super().__init__(f"The specified attribute '{attr}' is invalid. {message}")
 
 
 class _InvalidInterfaceDirectoryException(Exception):

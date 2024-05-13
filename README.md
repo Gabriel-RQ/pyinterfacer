@@ -198,7 +198,7 @@ components:
 
 ## Overlay
 
-An interface with display type `overlay` works just like an interface with display type `default`, but it is rendered into the global overlay, meaning it will always be rendered.
+An interface with display type `overlay` works just like an interface with display type `default`, but it is rendered into the global overlay, meaning it will always be rendered. The `parent` attribute can also be set, and it should receive the name of another loaded interface, meaning the interface will be rendered as an overlay in it's 'parent'. The `background` attribute will only work to display images for interfaces with display type overlay.
 
 # Style classes
 
