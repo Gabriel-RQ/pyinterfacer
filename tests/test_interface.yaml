@@ -1,0 +1,81 @@
+interface: test_interface
+background: "#1c1c1c"
+display: grid
+rows: 3
+columns: 3
+styles:
+  - name: font-style
+    font_color: "#c1c1c1"
+    font_size: 22
+
+  - name: button-style
+    bg_color: "#9a82bf"
+    bg_focus_color: "#8f6bc7"
+    focus_color: "#8f6bc7"
+components:
+  - type: text
+    id: text
+    style: font-style
+    grid_cell: 0
+    text: This is a Text
+
+  - type: paragraph
+    id: paragraph
+    style: font-style
+    grid_cell: 1
+    lines: [This is a Paragraph., "Look, another line..."]
+    line_height: 35
+
+  - type: text-button
+    id: text-button
+    style: [button-style, font-style]
+    grid_cell: 2
+    text: This is a TextButton
+
+  - type: button
+    id: button
+    style: [button-style, font-style]
+    grid_cell: 3
+    text: This is a Button
+    border_radius: 40
+    width: 80%
+    height: 45%
+
+  - type: input
+    id: input
+    grid_cell: 4
+    hint: This is an Input
+    font_color: "#1c1c1c"
+    border_radius: 15
+    bg_color: "#c2bacf"
+    bg_focus_color: "#d0baf5"
+    border_focus_color: "#a880ed"
+    height: 25%
+    width: 98%
+
+  - type: image
+    id: image
+    grid_cell: 6
+    path: assets/flower.png
+
+  - type: animation
+    id: animation
+    grid_cell: 7
+    images:
+      [
+        assets/flower16x16_1.png,
+        assets/flower16x16_2.png,
+        assets/flower16x16_3.png,
+        assets/flower16x16_4.png,
+      ]
+    delay: 50
+    colorkey: black
+
+  - type: spritesheet-animation
+    id: spritesheet-animation
+    grid_cell: 8
+    spritesheet: assets/spaceship16x16.png
+    sprite_width: 16
+    sprite_height: 16
+    delay: 45
+    colorkey: black
