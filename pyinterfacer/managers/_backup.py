@@ -129,7 +129,10 @@ class _BackupManager:
         :param pyinterfacer: PyInterfacer's object instance.
         """
 
-        self.focus = pyinterfacer._current_focus.name
+        if pyinterfacer.current_focus is not None:
+            self.focus = pyinterfacer._current_focus.name
+        else:
+            self.focus = None
         self.interfaces = pyinterfacer._interfaces.copy()
         self.components = pyinterfacer._components.copy()
         self.actions = pyinterfacer._component_action_mapping.copy()
