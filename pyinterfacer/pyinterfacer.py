@@ -188,6 +188,7 @@ class PyInterfacer(metaclass=Singleton):
             interface = self._interfaces.get(i)
             if interface is not None:
                 interface._parse_components([d])
+                self._components.update(interface.component_mapping)
 
     # Update and render
 
@@ -405,7 +406,7 @@ class PyInterfacer(metaclass=Singleton):
         # Checks if a display has been set, if not, fallback to the display initialized from pygame.display.set_mode
         if self._display is None:
             if pygame.display.get_active():
-                self.display = pygame.display.get_surface()
+                self._display = pygame.display.get_surface()
             else:
                 raise _UndefinedDisplaySurfaceException()
 
